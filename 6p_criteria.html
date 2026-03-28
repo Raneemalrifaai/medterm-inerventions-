@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WHO 6P Criteria vs Kanaleneiland</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#ffffff;--bg2:#f5f4f0;--bg3:#eeede8;--text:#1a1a18;--muted:#5f5e5a;--dim:#888780;--border:rgba(0,0,0,0.10);--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#e8e6de;--muted:#9c9a92;--dim:#6b6a64;--border:rgba(255,255,255,0.10);}}
+body{font-family:var(--font);background:var(--bg3);color:var(--text);padding:20px;min-height:100vh;}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);text-decoration:none;margin-bottom:16px;padding:5px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg);}
+h1{font-size:22px;font-weight:500;margin-bottom:4px;}
+.sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+#card{background:var(--bg);border:0.5px solid var(--border);border-radius:12px;padding:16px 20px;}
+.ptabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
+.ptab{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid;background:transparent;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:500;}
+.ptab.active{color:#fff!important;}
+.pp{display:none;}.pp.show{display:block;}
+.ph{padding:12px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.ph h2{font-size:15px;font-weight:500;color:#fff;margin-bottom:2px;}
+.ph p{font-size:11px;color:rgba(255,255,255,0.75);}
+.sbadge{font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.5);color:#fff;}
+.ct{border:0.5px solid var(--border);border-radius:0 0 10px 10px;overflow:hidden;}
+.cth{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 80px;background:var(--bg2);padding:8px 14px;font-size:10px;font-weight:500;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;}
+.ctr{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 80px;padding:10px 14px;border-top:0.5px solid var(--border);background:var(--bg);align-items:center;}
+.ctr:hover{background:var(--bg2);}
+.ci{font-size:12px;color:var(--text);font-weight:500;line-height:1.3;}
+.cs{font-size:10px;color:var(--dim);margin-top:1px;}
+.cv{font-size:13px;font-weight:500;text-align:center;}
+.cw{font-size:11px;color:var(--muted);text-align:center;}
+.cbw{position:relative;height:8px;border-radius:4px;background:var(--bg3);overflow:hidden;}
+.cbb{height:100%;border-radius:4px;}
+.sp{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;text-align:center;white-space:nowrap;}
+.s-pass{background:#EAF3DE;color:#27500A;}.s-fail{background:#FCEBEB;color:#791F1F;}.s-warn{background:#FAEEDA;color:#633806;}.s-partial{background:#E6F1FB;color:#0C447C;}
+.sumrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.sumc{flex:1;min-width:100px;padding:10px 12px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg);text-align:center;}
+.sumn{font-size:22px;font-weight:500;}.suml{font-size:10px;color:var(--dim);margin-top:2px;}
+footer{font-size:10px;color:var(--dim);margin-top:16px;text-align:center;font-style:italic;}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Back to index</a>
+<nav style="background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;font-family:sans-serif;margin-bottom:16px;">
+  <a href="index.html" style="font-size:14px;font-weight:500;color:#1D9E75;text-decoration:none;">Kanaleneiland Health Layers</a>
+  <div style="display:flex;gap:18px;">
+    <a href="bubble_map.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Bubble Map</a>
+    <a href="6p_criteria.html" style="font-size:12px;color:#1a1a18;text-decoration:none;font-weight:500;">6P Criteria</a>
+    <a href="cascade_map.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Cascade Map</a>
+    <a href="intervention_sequence.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Interventions</a>
+    <a href="full_intervention.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Full Simulator</a>
+    <a href="location_simulator.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Location Simulator</a>
+    <a href="sources.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Sources</a>
+  </div>
+</nav>
+<h1>WHO 6P Criteria vs Kanaleneiland</h1>
+<p class="sub">How Kanaleneiland performs against every WHO Phase VII Healthy Cities benchmark · Click each pillar · Data: CBS OpenData 86270ENG</p>
+<div id="card">
+  <div class="ptabs" id="tabs"></div>
+  <div id="panels"></div>
+  <div class="sumrow" id="summary"></div>
+</div>
+<footer>WHO European Healthy Cities Phase VII 2019-2024 · CBS 86270ENG · Gezondheidsmonitor 2020/2022</footer>
+<script>
+const P=[
+  {id:'people',label:'People',color:'#534AB7',desc:'Physical health, mental wellbeing, loneliness & healthcare',criteria:[
+    {i:'Anxiety/depression risk',s:'WHO: <15%',who:'<15%',k:'18%',u:'11.1%',kn:18,wn:15,pass:false},
+    {i:'Restricted daily activity',s:'WHO: <20%',who:'<20%',k:'35%',u:'28.8%',kn:35,wn:20,pass:false},
+    {i:'Severe restriction',s:'WHO: <3%',who:'<3%',k:'6.6%',u:'2.9%',kn:6.6,wn:3,pass:false},
+    {i:'Physical impairments (1+)',s:'WHO: ≤national avg (~28%)',who:'≤28%',k:'52%',u:'27.7%',kn:52,wn:28,pass:false},
+    {i:'Loneliness index',s:'WHO: <30% socially isolated',who:'Index >60',k:'56',u:'68.4',kn:56,wn:60,pass:false,idx:true},
+    {i:'Suicidal ideation',s:'WHO: clinically significant >10%',who:'<10%',k:'15%',u:'11.9%',kn:15,wn:10,pass:false},
+    {i:'Perceived health index',s:'Within 5 pts of city avg',who:'≥61.6',k:'66.4',u:'66.6',kn:66.4,wn:61.6,pass:true,idx:true},
+  ]},
+  {id:'place',label:'Place',color:'#1D9E75',desc:'Housing, transport equity & active mobility',criteria:[
+    {i:'Green space within 300m',s:'WHO: index ≥80',who:'≥80',k:'54',u:'81.5',kn:54,wn:80,pass:false,idx:true},
+    {i:'Distance to GP',s:'WHO: ≤1.2km',who:'≤1.2km',k:'1.5km',u:'~0.8km',kn:1.5,wn:1.2,pass:false,low:true},
+    {i:'Distance to hospital',s:'WHO: ≤4km',who:'≤4km',k:'3.9km',u:'~2.5km',kn:3.9,wn:4,pass:true,low:true},
+    {i:'Distance to station',s:'WHO GAPPA: ≤2km',who:'≤2km',k:'2.6km',u:'~1.5km',kn:2.6,wn:2,pass:false,low:true},
+    {i:'Active travel to school',s:'WHO GAPPA: ≥70%',who:'≥70%',k:'67%',u:'69.1%',kn:67,wn:70,pass:false},
+    {i:'Meets exercise guidelines',s:'WHO GAPPA: ≥60%',who:'≥60%',k:'51%',u:'56.7%',kn:51,wn:60,pass:false},
+  ]},
+  {id:'participation',label:'Participation',color:'#D4537E',desc:'Social cohesion, resilience & community participation',criteria:[
+    {i:'Social cohesion index',s:'Within 5 pts of Utrecht',who:'≥59.1',k:'62.1',u:'64.1',kn:62.1,wn:59.1,pass:true,idx:true},
+    {i:'Social nuisance',s:'Below city average',who:'<49%',k:'41%',u:'49%',kn:41,wn:49,pass:true},
+    {i:'Social support of others',s:'WHO: ≥90%',who:'≥90%',k:'87.4%',u:'93.1%',kn:87.4,wn:90,pass:false},
+    {i:'Social resilience index',s:'Within 5 pts of Utrecht',who:'≥63.9',k:'62.1',u:'68.9',kn:62.1,wn:63.9,pass:false,idx:true},
+    {i:'Formal participation',s:'WHO Phase VII mandatory',who:'Required',k:'Not measured',u:'City level',kn:null,wn:null,pass:null},
+  ]},
+  {id:'prosperity',label:'Prosperity',color:'#BA7517',desc:'Economic equity, child poverty & financial resilience',criteria:[
+    {i:'Child poverty rate',s:'WHO/SDG1: ≤10%',who:'≤10%',k:'33.6%',u:'13.2%',kn:33.6,wn:10,pass:false},
+    {i:'Trouble making ends meet',s:'WHO: <15%',who:'<15%',k:'28.3%',u:'18.4%',kn:28.3,wn:15,pass:false},
+    {i:'Low economic resilience',s:'WHO: <25%',who:'<25%',k:'25%',u:'12%',kn:25,wn:25,pass:null},
+    {i:'Socio-economic index gap',s:'WHO: ≤5pt gap vs city',who:'≤5pt gap',k:'−15.1',u:'0',kn:15.1,wn:5,pass:false,gap:true},
+    {i:'Fragile elderly health',s:'WHO: <35%',who:'<35%',k:'42%',u:'31.4%',kn:42,wn:35,pass:false},
+  ]},
+  {id:'peace',label:'Peace',color:'#378ADD',desc:'Governance, HiAP & intersectoral accountability',criteria:[
+    {i:'Health in All Policies',s:'WHO Phase VII mandatory',who:'Required',k:'Unverified',u:'City level',kn:null,pass:null},
+    {i:'Intersectoral working group',s:'3+ non-health depts',who:'Required',k:'Not confirmed',u:'City level',kn:null,pass:null},
+    {i:'Annual WHO reporting',s:'Phase VII required',who:'Required',k:'Not confirmed',u:'City level',kn:null,pass:null},
+    {i:'Health impact assessment',s:'Mandatory for planning',who:'Required',k:'Not confirmed',u:'City level',kn:null,pass:null},
+    {i:'Multi-pillar deficit (proxy)',s:'0-1 pillars failing = governance working',who:'≤1 failing',k:'4 failing',u:'~1 failing',kn:4,wn:1,pass:false,gap:true},
+  ]},
+  {id:'planet',label:'Planet',color:'#639922',desc:'Green space, biodiversity, air quality & climate',criteria:[
+    {i:'Park accessibility index',s:'WHO: ≥80',who:'≥80',k:'54',u:'81.5',kn:54,wn:80,pass:false,idx:true},
+    {i:'Biodiversity index',s:'At or above city avg',who:'≥66.8',k:'76.1',u:'66.8',kn:76.1,wn:66.8,pass:true,idx:true},
+    {i:'Tree canopy cover',s:'WHO: ≥20%',who:'≥20%',k:'<5% (est)',u:'~15%',kn:5,wn:20,pass:false},
+    {i:'Air quality PM2.5',s:'WHO AQG 2021: <5 μg/m³',who:'<5',k:'>10 (est)',u:'~8',kn:10,wn:5,pass:false,low:true},
+    {i:'Weekly sports participation',s:'WHO: ≥65%',who:'≥65%',k:'53%',u:'66.5%',kn:53,wn:65,pass:false},
+    {i:'Overweight prevalence',s:'WHO: <40%',who:'<40%',k:'50%',u:'39.3%',kn:50,wn:40,pass:false},
+  ]},
+];
+const SM={pass:{l:'Meets',c:'s-pass'},fail:{l:'Fails',c:'s-fail'},warn:{l:'Borderline',c:'s-warn'},partial:{l:'Partial',c:'s-partial'}};
+function gs(r){if(r.pass===null)return'partial';if(r.pass===true)return'pass';if(r.kn!==null&&r.wn!==null){const lo=r.low||r.gap;const ratio=lo?r.wn/r.kn:r.kn/r.wn;if(ratio>0.85)return'warn';}return'fail';}
+function gbw(r){if(r.kn===null||r.wn===null)return 0;if(r.idx)return Math.min(100,(r.kn/100)*100);if(r.low||r.gap)return Math.min(100,(r.wn/Math.max(r.kn,r.wn))*100);return Math.min(100,(r.kn/Math.max(r.kn,r.wn))*100);}
+function gbc(r){const s=gs(r);return s==='pass'?'#639922':s==='warn'?'#BA7517':s==='partial'?'#378ADD':'#A32D2D';}
+let at='people';
+function rt(){const t=document.getElementById('tabs');t.innerHTML='';P.forEach(p=>{const b=document.createElement('button');b.className='ptab'+(at===p.id?' active':'');b.style.borderColor=p.color;b.style.color=at===p.id?'#fff':p.color;if(at===p.id)b.style.background=p.color;b.innerHTML=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${at===p.id?'#fff':p.color};margin-right:4px;vertical-align:middle;"></span>${p.label}`;b.onclick=()=>{at=p.id;rt();rp();};t.appendChild(b);});}
+function rp(){const panels=document.getElementById('panels');panels.innerHTML='';P.forEach(p=>{const d=document.createElement('div');d.className='pp'+(at===p.id?' show':'');const pn=p.criteria.filter(r=>r.pass===true).length;const tot=p.criteria.filter(r=>r.pass!==null).length;const sl=pn===0?'No criteria met':pn===tot?'All criteria met':`${pn}/${tot} criteria met`;d.innerHTML=`<div class="ph" style="background:${p.color};"><div><h2>${p.label} — WHO Phase VII</h2><p>${p.desc}</p></div><span class="sbadge">${sl}</span></div><div class="ct"><div class="cth"><span>Indicator</span><span style="text-align:center">WHO</span><span style="text-align:center">Kanaleneiland</span><span style="text-align:center">Utrecht</span><span style="text-align:center">Status</span></div>${p.criteria.map(row=>{const s=gs(row),sp=SM[s],bwv=gbw(row),bcv=gbc(row);const kc=s==='pass'?'#3B6D11':s==='warn'?'#854F0B':s==='partial'?'#185FA5':'#A32D2D';return`<div class="ctr"><div><div class="ci">${row.i}</div><div class="cs">${row.s}</div></div><div class="cw" style="font-size:12px;font-weight:500;">${row.who}</div><div style="text-align:center"><div class="cv" style="color:${kc}">${row.k}</div>${row.kn!==null?`<div class="cbw" style="width:80%;margin:3px auto 0;"><div class="cbb" style="width:${bwv}%;background:${bcv};"></div></div>`:''}</div><div class="cw">${row.u}</div><div style="text-align:center"><span class="sp ${sp.c}">${sp.l}</span></div></div>`;}).join('')}</div>`;panels.appendChild(d);});}
+function rs(){let tp=0,tf=0,tw=0,tpt=0;P.forEach(p=>p.criteria.forEach(r=>{const s=gs(r);if(s==='pass')tp++;else if(s==='fail')tf++;else if(s==='warn')tw++;else tpt++;}));const tot=tp+tf+tw+tpt;document.getElementById('summary').innerHTML=`<div class="sumc"><div class="sumn" style="color:#3B6D11">${tp}</div><div class="suml">Met</div></div><div class="sumc"><div class="sumn" style="color:#A32D2D">${tf}</div><div class="suml">Failed</div></div><div class="sumc"><div class="sumn" style="color:#854F0B">${tw}</div><div class="suml">Borderline</div></div><div class="sumc"><div class="sumn" style="color:#185FA5">${tpt}</div><div class="suml">Not measurable</div></div><div class="sumc"><div class="sumn" style="color:var(--text)">${Math.round((tp/tot)*100)}%</div><div class="suml">Pass rate</div></div>`;}
+rt();rp();rs();
+</script>
+</body>
+</html>

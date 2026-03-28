@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanaleneiland — WHO Healthy City Relationship Map (Sourced)</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-primary: #ffffff; --bg-secondary: #f5f4f0; --bg-tertiary: #eeede8;
+  --text-primary: #1a1a18; --text-secondary: #5f5e5a; --text-tertiary: #888780;
+  --border: rgba(0,0,0,0.12); --radius-md: 8px; --radius-lg: 12px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg-primary:#1c1c1a; --bg-secondary:#252523; --bg-tertiary:#2e2e2b; --text-primary:#e8e6de; --text-secondary:#9c9a92; --text-tertiary:#6b6a64; --border:rgba(255,255,255,0.1); }
+}
+body { font-family: var(--font); background: var(--bg-tertiary); color: var(--text-primary); padding: 20px; min-height: 100vh; }
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+.subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+#card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+#pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; align-items: center; }
+.pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid; background: transparent; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+.pill.off { opacity: 0.25; }
+canvas { display: block; width: 100%; height: auto; }
+#panel { margin-top: 10px; padding: 14px 18px; border: 0.5px solid var(--border); border-radius: 10px; background: var(--bg-secondary); font-size: 12px; color: var(--text-secondary); min-height: 60px; }
+.p-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+.p-pillar { font-size: 11px; font-weight: 500; margin-bottom: 6px; }
+.p-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 7px; }
+.p-source { font-size: 10px; color: var(--text-tertiary); font-style: italic; padding: 6px 10px; border-radius: 6px; background: var(--bg-primary); border: 0.5px solid var(--border); margin-bottom: 7px; }
+.scores { display: flex; gap: 7px; flex-wrap: wrap; }
+.sc { flex: 1; min-width: 70px; padding: 6px 10px; background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: 8px; }
+.sc-l { font-size: 10px; color: var(--text-tertiary); }
+.sc-v { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+#leg { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.li { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+.ld { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.neg { color: #A32D2D; } .pos { color: #3B6D11; }
+.hint { font-size: 11px; color: var(--text-tertiary); margin-top: 8px; }
+</style>
+</head>
+<body>
+<nav style="background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;font-family:sans-serif;">
+  <a href="index.html" style="font-size:14px;font-weight:500;color:#1D9E75;text-decoration:none;">Kanaleneiland Health Layers</a>
+  <div style="display:flex;gap:18px;">
+    <a href="bubble_map.html" style="font-size:12px;color:#1a1a18;text-decoration:none;font-weight:500;">Bubble Map</a>
+    <a href="6p_criteria.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">6P Criteria</a>
+    <a href="cascade_map.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Cascade Map</a>
+    <a href="intervention_sequence.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Interventions</a>
+    <a href="full_intervention.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Full Simulator</a>
+    <a href="location_simulator.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Location Simulator</a>
+    <a href="sources.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Sources</a>
+  </div>
+</nav>
+<h1>Kanaleneiland — WHO Healthy City Relationship Map</h1>
+<p class="subtitle">Click any bubble · Toggle WHO 6P pillars · Drag to rearrange · Each bubble shows its WHO source and Kanaleneiland indicator score</p>
+<div id="card">
+  <div id="pills"></div>
+  <canvas id="cv"></canvas>
+  <div id="leg"></div>
+  <div id="panel">Click any bubble to see its role, WHO source, and causal connections to other factors.</div>
+  <p class="hint">Drag bubbles to reposition · Bubble size = relative influence · Line thickness = strength of causal connection</p>
+</div>
+<script>
+const DK = matchMedia('(prefers-color-scheme: dark)').matches;
+const W = 1400, H = 980;
+const P6 = {
+  people:        { label:'People',         fill: DK?'#3C3489':'#EEEDFE', stroke:'#534AB7', text: DK?'#CECBF6':'#26215C' },
+  place:         { label:'Place',          fill: DK?'#0F6E56':'#E1F5EE', stroke:'#1D9E75', text: DK?'#9FE1CB':'#04342C' },
+  participation: { label:'Participation',  fill: DK?'#993556':'#FBEAF0', stroke:'#D4537E', text: DK?'#F4C0D1':'#4B1528' },
+  prosperity:    { label:'Prosperity',     fill: DK?'#854F0B':'#FAEEDA', stroke:'#BA7517', text: DK?'#FAC775':'#412402' },
+  peace:         { label:'Peace',          fill: DK?'#185FA5':'#E6F1FB', stroke:'#378ADD', text: DK?'#B5D4F4':'#042C53' },
+  planet:        { label:'Planet',         fill: DK?'#3B6D11':'#EAF3DE', stroke:'#639922', text: DK?'#C0DD97':'#173404' },
+  core:          { label:'Core',           fill: DK?'#5F5E5A':'#F1EFE8', stroke:'#888780', text: DK?'#D3D1C7':'#2C2C2A' },
+};
+const ECOLS = { people:'#534AB7', place:'#1D9E75', participation:'#D4537E', prosperity:'#BA7517', peace:'#378ADD', planet:'#639922' };
+const nodes = [
+  { id:'hc',    label:['HEALTHY','CITY'],          p:'core',          r:58, x:700, y:490, k:null, u:null,
+    desc:'WHO defines a Healthy City as one that continuously creates and improves its physical and social environments, enabling people to reach their full potential. Six interdependent pillars (6Ps) form the framework.',
+    source:'WHO European Healthy Cities Network, Phase VII 2019–2024 · who.int/europe/healthy-cities', links:[] },
+  { id:'ph',    label:['Physical','Health'],        p:'people',        r:44, x:240, y:175, k:59.8, u:73,
+    desc:'Physical health is foundational human capital. At 52% impairment rate (vs 28% Utrecht), restricted activity limits work, mobility, and social participation — cascading into economic and social deficits.',
+    source:'WHO 6P: People · BRE/Savills Healthy Cities Index 2023 · CBS Gezondheidsmonitor 86270ENG',
+    links:[{to:'hc',t:'people'},{to:'housing',t:'place'},{to:'transport',t:'place'},{to:'greenspace',t:'planet'},{to:'health_svc',t:'people'},{to:'econ',t:'prosperity'}] },
+  { id:'mental',label:['Mental','Wellbeing'],       p:'people',        r:42, x:145, y:430, k:66.9, u:75.9,
+    desc:'Mental wellbeing is shaped by loneliness, stress, income insecurity, housing quality, and green space. 18% at risk of anxiety/depression vs 11.1% Utrecht. 55% elderly fragile mental health vs 39.3%.',
+    source:'WHO 6P: People · PMC systematic review 2021 (PMID 34470696) · CBS Gezondheidsmonitor — mental health module',
+    links:[{to:'hc',t:'people'},{to:'lone',t:'people'},{to:'greenspace',t:'planet'},{to:'econ',t:'prosperity'},{to:'housing',t:'place'},{to:'cohesion',t:'participation'}] },
+  { id:'lone',  label:['Loneliness','−12 pts'],     p:'people',        r:36, x:165, y:230, k:56, u:68.4,
+    desc:'Social loneliness (missing people to count on) + emotional loneliness (feeling rejected). 45.4% emotionally lonely vs 31.8% Utrecht. Mortality risk equivalent to smoking 15 cigarettes/day.',
+    source:'WHO 6P: People + Participation · Holt-Lunstad et al. 2015 PLOS Medicine doi:10.1371/journal.pmed.1001867 · CBS loneliness scale',
+    links:[{to:'mental',t:'people'},{to:'cohesion',t:'participation'},{to:'transport',t:'place'},{to:'housing',t:'place'}] },
+  { id:'econ',  label:['Economic','Equity −15'],    p:'prosperity',    r:48, x:1160, y:175, k:69.1, u:84.2,
+    desc:'Largest gap: 15 pts. 28.3% trouble making ends meet vs 18.4% Utrecht. 25% have no financial buffer vs 12%. Child poverty 34% vs 13%. Marmot: upstream driver of all other deficits.',
+    source:'WHO 6P: Prosperity · Marmot Review 2010 Fair Society Healthy Lives · CSDH 2008 · CBS Kerncijfers 86270ENG',
+    links:[{to:'hc',t:'prosperity'},{to:'housing',t:'place'},{to:'transport',t:'place'},{to:'mental',t:'people'},{to:'cohesion',t:'participation'},{to:'cpov',t:'prosperity'},{to:'gov',t:'peace'}] },
+  { id:'cpov',  label:['Child Poverty','34% vs 13%'],p:'prosperity',   r:30, x:1250, y:390, k:33.6, u:13.2,
+    desc:'Child poverty more than doubles Utrecht rate. Constrains nutrition, play, education, and health access — locking in intergenerational disadvantage. SDG 1 → SDG 3 priority.',
+    source:'WHO SDG 1 + SDG 3 · UNICEF Innocenti Child Poverty in Rich Countries · CBS StatLine neighbourhood statistics',
+    links:[{to:'econ',t:'prosperity'},{to:'mental',t:'people'},{to:'ph',t:'people'},{to:'housing',t:'place'}] },
+  { id:'housing',label:['Housing &','Safety'],      p:'place',         r:36, x:290, y:730, k:null, u:null,
+    desc:'Cold, damp, overcrowded housing causes respiratory disease, cardiovascular risk, and chronic stress. Energy retrofit delivers health + climate co-benefits from one investment.',
+    source:'WHO 6P: Place · WHO Housing and Health Guidelines 2018 · Buildings & Cities Journal 2022 — retrofit co-benefits',
+    links:[{to:'hc',t:'place'},{to:'mental',t:'people'},{to:'ph',t:'people'},{to:'cohesion',t:'participation'},{to:'climate',t:'planet'}] },
+  { id:'transport',label:['Transport &','Mobility'],p:'place',         r:36, x:700, y:830, k:null, u:null,
+    desc:'Station 2.6km away limits employment access. Beneluxlaan wide road blocks active travel. Active travel is the WHO\'s most cost-effective NCD prevention intervention.',
+    source:'WHO 6P: Place · WHO GAPPA 2018–2030 · ScienceDirect active mobility + NCD reduction · Nature Medicine 2025',
+    links:[{to:'hc',t:'place'},{to:'econ',t:'prosperity'},{to:'ph',t:'people'},{to:'lone',t:'people'},{to:'air',t:'planet'},{to:'cohesion',t:'participation'}] },
+  { id:'greenspace',label:['Green Space','−27 pts'],p:'planet',        r:40, x:1090, y:700, k:54, u:81.5,
+    desc:'Largest built-environment gap: 27.5 pts. Three confirmed pathways: (1) harm reduction — filters PM2.5/NO2; (2) mental restoration — reduces cortisol; (3) capacity building — enables activity + social contact.',
+    source:'WHO 6P: Planet · PMC systematic review 2021 PMID 34470696 — three green space pathways · EEA Urban Green Infrastructure',
+    links:[{to:'hc',t:'planet'},{to:'mental',t:'people'},{to:'ph',t:'people'},{to:'air',t:'planet'},{to:'cohesion',t:'participation'},{to:'bio',t:'planet'}] },
+  { id:'air',   label:['Air Quality &','Pollution'], p:'planet',       r:28, x:1270, y:640, k:null, u:null,
+    desc:'WHO estimates 7M deaths/year from air pollution. Beneluxlaan generates PM2.5, NO2, ozone. Trees are the primary nature-based solution for localised urban air pollution.',
+    source:'WHO Global Air Quality Guidelines 2021 · EEA Air Quality in Europe 2023 · ScienceDirect SDG 3+13+15 co-benefits',
+    links:[{to:'greenspace',t:'planet'},{to:'climate',t:'planet'},{to:'ph',t:'people'}] },
+  { id:'climate',label:['Climate','Resilience'],    p:'planet',        r:26, x:1280, y:490, k:null, u:null,
+    desc:'Heat islands, flooding, extreme weather compound health inequality. Low-income districts most exposed. Nature-based solutions simultaneously improve resilience, biodiversity, and mental health.',
+    source:'WHO 6P: Planet · Nature Medicine 2025 climate × health equity · IPCC AR6 Chapter 6 Urban health outcomes',
+    links:[{to:'hc',t:'planet'},{to:'bio',t:'planet'},{to:'housing',t:'place'}] },
+  { id:'bio',   label:['Biodiversity','+9 vs Utrecht'],p:'planet',     r:32, x:1200, y:560, k:76.1, u:66.8,
+    desc:'District strength: +9.3 pts above Utrecht. Amsterdam-Rijnkanaal corridor creates species-rich habitats. Biodiverse environments amplify mental restoration effect — strongest asset to leverage.',
+    source:'WHO 6P: Planet · King\'s College London Urban Mind Study 2021 — biodiversity + mental wellbeing · PMC green space review',
+    links:[{to:'greenspace',t:'planet'},{to:'mental',t:'people'},{to:'climate',t:'planet'}] },
+  { id:'cohesion',label:['Social Cohesion','& Community'],p:'participation',r:36,x:530,y:760,k:62.1,u:64.1,
+    desc:'Smallest gap: only −2 pts. Social nuisance actually lower than Utrecht (41% vs 49%). Community bonds relatively intact — a foundation to build from. WHO Phase VII requires participation.',
+    source:'WHO 6P: Participation — community in decisions · PMC cohesion + mental health mutually reinforcing · WHO Phase VII criteria',
+    links:[{to:'hc',t:'participation'},{to:'mental',t:'people'},{to:'lone',t:'people'},{to:'res',t:'participation'},{to:'gov',t:'peace'},{to:'housing',t:'place'}] },
+  { id:'res',   label:['Social','Resilience −7'],   p:'participation', r:30, x:265, y:580, k:62.1, u:68.9,
+    desc:'25% low economic resilience vs 12% Utrecht. Capacity to recover from hardship is weakened when economic insecurity and loneliness coexist. Emergent systems property — cannot be addressed in isolation.',
+    source:'WHO 6P: Participation + Prosperity · PMC urban health — resilience as emergent systems property · Marmot Review 2010',
+    links:[{to:'cohesion',t:'participation'},{to:'econ',t:'prosperity'},{to:'mental',t:'people'},{to:'gov',t:'peace'}] },
+  { id:'health_svc',label:['Health &','Care Access'],p:'people',       r:32, x:550, y:155, k:null, u:null,
+    desc:'GP 1.5km, hospital 3.9km. But 80% of health outcomes driven by social determinants, not clinical care. Services must be embedded in healthy environments to be effective.',
+    source:'WHO 6P: People — universal health coverage · Healthy Cities Commission 2022 · NHS England social determinants evidence',
+    links:[{to:'hc',t:'people'},{to:'ph',t:'people'},{to:'gov',t:'peace'},{to:'econ',t:'prosperity'}] },
+  { id:'gov',   label:['Governance &','Equity'],    p:'peace',         r:36, x:175, y:660, k:null, u:null,
+    desc:'Enabling condition for all other pillars. WHO Phase VII: health must be embedded in housing, transport, planning, economic policy simultaneously — Health in All Policies (HiAP). Without it each sector works alone.',
+    source:'WHO 6P: Peace · WHO Health in All Policies framework 2013 · PMC municipalities as primary health actors',
+    links:[{to:'hc',t:'peace'},{to:'econ',t:'prosperity'},{to:'cohesion',t:'participation'},{to:'housing',t:'place'},{to:'health_svc',t:'people'},{to:'transport',t:'place'}] },
+];
+const nodeMap = {};
+nodes.forEach(n => nodeMap[n.id] = n);
+const allEdges = [];
+nodes.forEach(n => (n.links||[]).forEach(lk => allEdges.push({ a:n.id, b:lk.to, type:lk.t })));
+let activePillars = new Set(['people','place','participation','prosperity','peace','planet']);
+let selected = null;
+let vel = {};
+nodes.forEach(n => { vel[n.id] = { x:0, y:0 }; });
+const cv = document.getElementById('cv');
+cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d');
+function hexRgb(h){ return { r:parseInt(h.slice(1,3),16), g:parseInt(h.slice(3,5),16), b:parseInt(h.slice(5,7),16) }; }
+function drawAll(){
+  ctx.clearRect(0,0,W,H);
+  allEdges.forEach(e=>{
+    const a=nodeMap[e.a],b=nodeMap[e.b];
+    if(!a||!b||!activePillars.has(e.type)) return;
+    const hi=selected&&(e.a===selected||e.b===selected);
+    const dim=selected&&!hi;
+    const col=ECOLS[e.type]||'#888';
+    const rgb=hexRgb(col);
+    const alpha=dim?0.03:hi?0.9:0.18;
+    ctx.beginPath();
+    ctx.moveTo(a.x,a.y);
+    ctx.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2-40,b.x,b.y);
+    ctx.strokeStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`;
+    ctx.lineWidth=hi?3:1;
+    ctx.stroke();
+  });
+  nodes.forEach(n=>{
+    const cat=P6[n.p];
+    let dimmed=selected&&selected!==n.id;
+    if(dimmed&&allEdges.some(e=>(e.a===selected||e.b===selected)&&(e.a===n.id||e.b===n.id))) dimmed=false;
+    ctx.save();
+    ctx.globalAlpha=dimmed?0.14:1;
+    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle=cat.fill; ctx.fill();
+    ctx.strokeStyle=cat.stroke; ctx.lineWidth=selected===n.id?3.5:2; ctx.stroke();
+    ctx.fillStyle=cat.text; ctx.textAlign='center'; ctx.textBaseline='middle';
+    const fs=n.r>=50?13:n.r>=38?11:n.r>=28?10:9;
+    ctx.font=`600 ${fs}px sans-serif`;
+    n.label.forEach((line,i)=>ctx.fillText(line,n.x,n.y+(i-(n.label.length-1)/2)*(fs+3)));
+    ctx.restore();
+  });
+}
+function physics(){
+  nodes.forEach(n=>{
+    if(n.id==='hc') return;
+    let fx=(W/2-n.x)*0.0015,fy=(H/2-n.y)*0.002;
+    nodes.forEach(m=>{
+      if(m.id===n.id) return;
+      const dx=n.x-m.x,dy=n.y-m.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+      const minD=n.r+m.r+60;
+      if(d<minD){const f=(minD-d)/minD*0.55;fx+=dx/d*f;fy+=dy/d*f;}
+      fx+=dx/d*(2500/(d*d))*0.001; fy+=dy/d*(2500/(d*d))*0.001;
+    });
+    allEdges.forEach(e=>{
+      let other=e.a===n.id?nodeMap[e.b]:e.b===n.id?nodeMap[e.a]:null;
+      if(!other) return;
+      const dx=other.x-n.x,dy=other.y-n.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+      const target=(e.a==='hc'||e.b==='hc')?260:160;
+      const f=(d-target)*0.012;
+      fx+=dx/d*f; fy+=dy/d*f;
+    });
+    vel[n.id].x=(vel[n.id].x+fx)*0.68;
+    vel[n.id].y=(vel[n.id].y+fy)*0.68;
+    n.x=Math.max(n.r+12,Math.min(W-n.r-12,n.x+vel[n.id].x));
+    n.y=Math.max(n.r+12,Math.min(H-n.r-12,n.y+vel[n.id].y));
+  });
+}
+let isDrag=false,dragNode=null,moved=false;
+cv.addEventListener('mousedown',e=>{
+  const rect=cv.getBoundingClientRect(),sx=W/rect.width,sy=H/rect.height;
+  const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;
+  [...nodes].reverse().forEach(n=>{ if(!dragNode){const dx=mx-n.x,dy=my-n.y;if(Math.sqrt(dx*dx+dy*dy)<=n.r){dragNode=n;isDrag=true;moved=false;}} });
+});
+cv.addEventListener('mousemove',e=>{
+  if(!isDrag||!dragNode) return;
+  const rect=cv.getBoundingClientRect(),sx=W/rect.width,sy=H/rect.height;
+  dragNode.x=Math.max(dragNode.r+12,Math.min(W-dragNode.r-12,(e.clientX-rect.left)*sx));
+  dragNode.y=Math.max(dragNode.r+12,Math.min(H-dragNode.r-12,(e.clientY-rect.top)*sy));
+  vel[dragNode.id]={x:0,y:0}; moved=true;
+});
+cv.addEventListener('mouseup',e=>{
+  if(!moved){
+    const rect=cv.getBoundingClientRect(),sx=W/rect.width,sy=H/rect.height;
+    const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;
+    let hit=null;
+    [...nodes].reverse().forEach(n=>{if(!hit){const dx=mx-n.x,dy=my-n.y;if(Math.sqrt(dx*dx+dy*dy)<=n.r)hit=n;}});
+    if(hit){selected=selected===hit.id?null:hit.id;renderPanel(selected?hit:null);}
+    else{selected=null;document.getElementById('panel').innerHTML='Click any bubble to see its role, WHO source, and causal connections to other factors.';}
+  }
+  isDrag=false;dragNode=null;moved=false;
+});
+function renderPanel(n){
+  if(!n){document.getElementById('panel').innerHTML='Click any bubble to see its role, WHO source, and causal connections to other factors.';return;}
+  const cat=P6[n.p];
+  const neighbors=allEdges.filter(e=>e.a===n.id||e.b===n.id).map(e=>{
+    const oid=e.a===n.id?e.b:e.a,o=nodeMap[oid],col=ECOLS[e.type]||'#888';
+    return `<span class="tag" style="background:${col}15;color:${col};border:0.5px solid ${col}55;">${o.label.join(' ')}</span>`;
+  }).join('');
+  let sc='';
+  if(n.k!=null&&n.u!=null){
+    const diff=(n.k-n.u).toFixed(1),cls=parseFloat(diff)>=0?'pos':'neg';
+    sc=`<div class="scores"><div class="sc"><div class="sc-l">Kanaleneiland</div><div class="sc-v">${n.k}</div></div><div class="sc"><div class="sc-l">Utrecht avg</div><div class="sc-v">${n.u}</div></div><div class="sc"><div class="sc-l">Gap</div><div class="sc-v ${cls}">${parseFloat(diff)>0?'+':''}${diff}</div></div><div class="sc"><div class="sc-l">WHO pillar</div><div class="sc-v" style="font-size:11px;color:${cat.stroke}">${cat.label}</div></div></div>`;
+  }
+  document.getElementById('panel').innerHTML=`<div class="p-title">${n.label.join(' ')}</div><div class="p-pillar" style="color:${cat.stroke}">WHO 6P: ${cat.label}</div><div class="p-desc">${n.desc}</div><div class="p-source">Source: ${n.source}</div>${neighbors?`<div class="tags">${neighbors}</div>`:''}${sc}`;
+}
+const pillsEl=document.getElementById('pills');
+pillsEl.innerHTML='<span style="font-size:10px;color:var(--text-tertiary);align-self:center;margin-right:4px;">WHO 6P:</span>';
+['people','place','participation','prosperity','peace','planet'].forEach(k=>{
+  const c=P6[k],btn=document.createElement('button');
+  btn.className='pill';btn.style.borderColor=c.stroke;btn.style.color=c.stroke;
+  btn.innerHTML=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c.stroke};margin-right:3px;vertical-align:middle;"></span>${c.label}`;
+  btn.onclick=()=>{if(activePillars.has(k)){activePillars.delete(k);btn.classList.add('off');}else{activePillars.add(k);btn.classList.remove('off');}};
+  pillsEl.appendChild(btn);
+});
+const legEl=document.getElementById('leg');
+['people','place','participation','prosperity','peace','planet'].forEach(k=>{const c=P6[k];legEl.innerHTML+=`<span class="li"><span class="ld" style="background:${c.stroke}"></span>${c.label}</span>`;});
+let frame=0;
+function loop(){if(frame<400)physics();drawAll();frame++;requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

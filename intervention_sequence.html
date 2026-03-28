@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanaleneiland — Intervention Sequence</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --bg:#ffffff; --bg2:#f5f4f0; --text:#1a1a18; --muted:#5f5e5a; --dim:#888780; --border:rgba(0,0,0,0.1); --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg:#1c1c1a; --bg2:#252523; --text:#e8e6de; --muted:#9c9a92; --dim:#6b6a64; --border:rgba(255,255,255,0.1); } }
+body { font-family: var(--font); background: var(--bg2); color: var(--text); padding: 20px; }
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+p.sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.step-row { display: flex; gap: 0; align-items: stretch; margin-bottom: 2px; }
+.step-num { width: 36px; min-width: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; border-radius: 8px 0 0 8px; }
+.step-body { flex: 1; padding: 12px 14px; border-radius: 0 8px 8px 0; border: 0.5px solid var(--border); border-left: none; background: var(--bg); cursor: pointer; transition: background .12s; }
+.step-body:hover { background: var(--bg2); }
+.step-body.active { background: var(--bg2); }
+.step-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.step-sub { font-size: 11px; color: var(--muted); }
+.step-src { font-size: 10px; color: var(--dim); font-style: italic; margin-top: 4px; }
+.connector { width: 36px; min-width: 36px; display: flex; justify-content: center; padding: 2px 0; }
+.connector-line { width: 2px; background: var(--border); flex: 1; }
+#detail { margin-top: 14px; padding: 14px 16px; border: 0.5px solid var(--border); border-radius: 10px; background: var(--bg2); font-size: 12px; color: var(--muted); min-height: 52px; }
+.dt { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+.actions { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.action { display: flex; align-items: flex-start; gap: 8px; padding: 7px 10px; background: var(--bg); border-radius: 7px; border: 0.5px solid var(--border); font-size: 11px; color: var(--muted); }
+.adot { width: 7px; min-width: 7px; height: 7px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+.cascades { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.ctag { font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+.stats { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.stat { flex: 1; min-width: 80px; padding: 7px 10px; background: var(--bg); border: 0.5px solid var(--border); border-radius: 7px; }
+.sl { font-size: 10px; color: var(--dim); }
+.sv { font-size: 15px; font-weight: 500; }
+footer { font-size: 10px; color: var(--dim); margin-top: 16px; font-style: italic; }
+</style>
+</head>
+<body>
+<nav style="background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;font-family:sans-serif;">
+  <a href="index.html" style="font-size:14px;font-weight:500;color:#1D9E75;text-decoration:none;">Kanaleneiland Health Layers</a>
+  <div style="display:flex;gap:18px;">
+    <a href="bubble_map.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Bubble Map</a>
+    <a href="6p_criteria.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">6P Criteria</a>
+    <a href="cascade_map.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Cascade Map</a>
+    <a href="intervention_sequence.html" style="font-size:12px;color:#1a1a18;text-decoration:none;font-weight:500;">Interventions</a>
+    <a href="full_intervention.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Full Simulator</a>
+    <a href="location_simulator.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Location Simulator</a>
+    <a href="sources.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Sources</a>
+  </div>
+</nav>
+<h1>Kanaleneiland — evidence-based intervention sequence</h1>
+<p class="sub">Click each step to expand the actions and cascade effects · Ordered by WHO evidence on intervention sequence</p>
+<div id="steps"></div>
+<div id="detail">Click any step to see the evidence-based actions for Kanaleneiland.</div>
+<footer>Sources: WHO HiAP 2013 · WHO Phase VII 2019–2024 · Marmot Review 2010 · CSDH 2008 · Holt-Lunstad 2015 · PMC Green Space Review 2021 · WHO GAPPA 2018–2030 · WHO Housing Guidelines 2018 · CBS 86270ENG</footer>
+<script>
+const steps = [
+  { n:1, color:'#378ADD', label:'Governance first', sub:'WHO HiAP — the enabling condition for everything else', source:'WHO Health in All Policies 2013 · WHO Phase VII 2019–2024', title:'Intersectoral governance (Peace pillar)',
+    why:'Without Health in All Policies coordination, each department works in isolation. No other intervention reaches its full potential without governance enabling them to compound.',
+    actions:['Form intersectoral working group: transport + parks + health + housing departments co-designing Beneluxlaan','Designate Kanaleneiland as a Health in All Policies pilot district with shared CBS indicator dashboard','Apply for WHO Healthy Cities Network membership to access EU funding and peer-city learning','Mandate health impact assessment for all housing, transport, and planning decisions in the district'],
+    cascades:['Economic equity','Housing','Transport','Green space','Health services'], stat:null },
+  { n:2, color:'#BA7517', label:'Economic equity', sub:'Marmot 2010 — "causes of causes" upstream of all other gaps', source:'Marmot Review 2010 · WHO CSDH 2008 · UNICEF Innocenti Child Poverty report',
+    title:'Economic equity (Prosperity pillar)',
+    why:'A 15-point socio-economic gap is the upstream driver of the loneliness, mental health, physical health, and resilience gaps simultaneously. Closing it cascades across every other indicator.',
+    actions:['Embed income support, debt counselling, and job brokerage in neighbourhood hubs — not city-centre offices requiring the 2.6km train journey','Launch child poverty programme: in-school food, after-school provision targeting the 34% child poverty rate','Apply Marmot Indicator Framework to monitor upstream social determinants, not just health outcomes','Co-locate economic and health services so residents access both in one place at Beneluxlaan intersection'],
+    cascades:['Mental wellbeing','Loneliness','Physical health','Social resilience','Housing'], stat:{label:'Gap vs Utrecht', val:'−15 pts', color:'#A32D2D'} },
+  { n:3, color:'#639922', label:'Green space access', sub:'PMC 2021 — 3 simultaneous health pathways per investment', source:'PMC Systematic Review 2021 PMID 34470696 · King\'s College Urban Mind Study 2021 · EEA Urban Green Infrastructure',
+    title:'Green space access (Planet pillar)',
+    why:'One investment delivers four health returns: air quality filtration, mental restoration, physical activity, and social cohesion. 27.5 points below Utrecht — the largest built-environment deficit.',
+    actions:['Convert underused lots and road verges to pocket parks within walking distance of residential areas','Use biodiversity asset (+9.3 pts vs Utrecht) as design standard — species-rich planting amplifies mental restoration','Design community gardens and social seating specifically to build bonds and reduce loneliness','Create green corridors connecting to active travel network so parks become part of the daily route'],
+    cascades:['Mental wellbeing','Air quality','Physical activity','Social cohesion','Loneliness'], stat:{label:'Park access gap', val:'−27.5 pts', color:'#A32D2D'} },
+  { n:4, color:'#D4537E', label:'Loneliness as clinical priority', sub:'Holt-Lunstad 2015 — equivalent to smoking 15 cigarettes/day', source:'Holt-Lunstad et al. 2015 PLOS Medicine doi:10.1371/journal.pmed.1001867 · CBS loneliness scale',
+    title:'Loneliness intervention (People + Participation pillars)',
+    why:'12-point loneliness gap represents a hidden mortality burden. Not a social comfort issue — a clinical health emergency requiring dedicated intervention at district level.',
+    actions:['Commission loneliness audit mapping isolated sub-populations: elderly alone, recent migrants, single-parent households','Fund community connectors: locally employed residents who identify isolated neighbours and connect them to activities','Design green space and transport improvements with loneliness in mind: benches facing each other, walking routes to social destinations','Apply Social Prescribing: GPs refer lonely patients to community activities — more cost-effective than medication'],
+    cascades:['Mental health risk','Social resilience','Social cohesion','Physical health'], stat:{label:'Loneliness gap', val:'−12 pts', color:'#A32D2D'} },
+  { n:5, color:'#1D9E75', label:'Housing as a health lever', sub:'WHO Housing Guidelines 2018 — cold/damp housing is a clinical hazard', source:'WHO Housing and Health Guidelines 2018 · Buildings & Cities Journal 2022 — retrofit co-benefits',
+    title:'Housing quality (Place pillar)',
+    why:'Poverty causes poor housing; poor housing causes disease and stress. Energy retrofit delivers health + climate co-benefits from one investment — fundable from three budgets simultaneously.',
+    actions:['Survey housing stock for cold, damp, and overcrowding — 52% impairment rate and economic indicators signal this is already significant','Apply for national and EU retrofit funding using the co-benefits argument: reduces fuel poverty, improves health, cuts carbon','Involve residents in housing improvement decisions — WHO evidence shows health outcomes improve more when residents shape solutions','Set minimum heating standards, enforce landlord compliance for households with elderly or impaired residents'],
+    cascades:['Physical health','Mental wellbeing','Climate resilience','Social cohesion'], stat:null },
+  { n:6, color:'#534AB7', label:'Active travel redesign', sub:'WHO GAPPA 2018–2030 — active travel = most cost-effective NCD prevention', source:'WHO Global Action Plan on Physical Activity 2018–2030 · Nature Medicine 2025 · ScienceDirect active mobility + NCD',
+    title:'Transport & mobility (Place pillar)',
+    why:'Station 2.6km away limits economic access. Wide dangerous roads prevent active travel. GAPPA shows daily active travel delivers significant NCD reduction independent of the commute.',
+    actions:['Audit walking and cycling network for safety gaps — prioritise elderly and physically impaired residents (52% impairment rate)','Prioritise protected cycle lanes: to station, schools, and nearest supermarket — facility access data shows exactly where','Create safe walking routes between homes and green spaces functioning as incidental social infrastructure','Work with Utrecht municipality to improve public transport frequency within the district to reduce car dependency'],
+    cascades:['Physical health','Mental wellbeing','Loneliness','Air quality','Economic equity'], stat:{label:'Distance to station', val:'2.6 km', color:'#BA7517'} },
+];
+let selected = null;
+function render(){
+  const cont = document.getElementById('steps');
+  cont.innerHTML = '';
+  steps.forEach((s,i) => {
+    const wrap = document.createElement('div');
+    const row = document.createElement('div');
+    row.className = 'step-row';
+    const isActive = selected === i;
+    row.innerHTML = `<div class="step-num" style="background:${s.color}18;color:${s.color};border:0.5px solid ${s.color}44;">${s.n}</div><div class="step-body${isActive?' active':''}" style="${isActive?'border-color:'+s.color+'66;':''}"><div class="step-title" style="color:${isActive?s.color:'var(--text)'}">${s.label}</div><div class="step-sub">${s.sub}</div><div class="step-src">${s.source}</div></div>`;
+    row.querySelector('.step-body').onclick = () => { selected = selected===i?null:i; render(); renderDetail(); };
+    wrap.appendChild(row);
+    if(i<steps.length-1){ const c=document.createElement('div'); c.className='connector'; c.innerHTML='<div class="connector-line"></div>'; wrap.appendChild(c); }
+    cont.appendChild(wrap);
+  });
+}
+function renderDetail(){
+  const el = document.getElementById('detail');
+  if(selected===null){ el.innerHTML='Click any step to see the evidence-based actions for Kanaleneiland.'; return; }
+  const s = steps[selected];
+  const acts = s.actions.map(a=>`<div class="action"><div class="adot" style="background:${s.color}"></div><span>${a}</span></div>`).join('');
+  const casc = s.cascades.map(c=>`<span class="ctag" style="background:${s.color}15;color:${s.color};border:0.5px solid ${s.color}44;">${c}</span>`).join('');
+  const stat = s.stat?`<div class="stats"><div class="stat"><div class="sl">Key indicator</div><div class="sv" style="color:${s.stat.color}">${s.stat.val}</div></div><div class="stat"><div class="sl">Metric</div><div class="sv" style="font-size:11px;color:var(--muted);margin-top:3px;">${s.stat.label}</div></div></div>`:'';
+  el.innerHTML=`<div class="dt" style="color:${s.color}">${s.title}</div><div style="font-size:12px;color:var(--muted);margin-bottom:8px;">${s.why}</div>${stat}<div style="font-size:11px;font-weight:500;color:var(--dim);margin:10px 0 5px;">Concrete actions for Kanaleneiland</div><div class="actions">${acts}</div><div style="font-size:11px;font-weight:500;color:var(--dim);margin:10px 0 5px;">Cascades into</div><div class="cascades">${casc}</div>`;
+}
+render(); renderDetail();
+</script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanaleneiland — Full Intervention Simulator</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-primary: #ffffff; --bg-secondary: #f5f4f0; --bg-tertiary: #eeede8;
+  --text-primary: #1a1a18; --text-secondary: #5f5e5a; --text-tertiary: #888780;
+  --border: rgba(0,0,0,0.10); --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius-md: 8px; --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg-primary:#1c1c1a; --bg-secondary:#252523; --bg-tertiary:#2e2e2b; --text-primary:#e8e6de; --text-secondary:#9c9a92; --text-tertiary:#6b6a64; --border:rgba(255,255,255,0.10); }
+}
+body { font-family: var(--font); background: var(--bg-tertiary); color: var(--text-primary); padding: 20px; min-height: 100vh; }
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+.subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+#app { max-width: 1200px; margin: 0 auto; }
+.top-bar { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+.preset { font-size: 11px; padding: 4px 11px; border-radius: 16px; border: 0.5px solid; background: transparent; cursor: pointer; transition: all .12s; white-space: nowrap; }
+.preset.on { color: #fff !important; }
+.layout { display: grid; grid-template-columns: 1fr 320px; gap: 12px; align-items: start; }
+.sliders-col { display: flex; flex-direction: column; gap: 10px; }
+.scores-col { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 8px; }
+.pcard { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.pcard-title { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 9px; padding-bottom: 6px; border-bottom: 0.5px solid var(--border); }
+.ctrl { margin-bottom: 8px; }
+.ctrl:last-child { margin-bottom: 0; }
+.ch { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
+.cl { font-size: 11px; font-weight: 500; }
+.cv { font-size: 11px; font-weight: 500; }
+.cd { font-size: 9.5px; color: var(--text-tertiary); margin-bottom: 3px; line-height: 1.35; }
+input[type=range] { width: 100%; margin: 0; }
+.sc6 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sc { background: var(--bg-secondary); border-radius: 7px; padding: 8px 10px; border: 0.5px solid var(--border); }
+.sc-l { font-size: 9px; color: var(--text-tertiary); }
+.sc-v { font-size: 17px; font-weight: 500; margin: 1px 0; }
+.sc-d { font-size: 9px; }
+.sc-bar { height: 4px; border-radius: 2px; background: var(--border); margin-top: 4px; overflow: hidden; }
+.sc-bf { height: 100%; border-radius: 2px; transition: width 0.3s; }
+.overall { border: 1.5px solid; border-radius: 10px; padding: 12px 14px; background: var(--bg-primary); }
+.ov-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.ov-num { font-size: 30px; font-weight: 500; line-height: 1; }
+.ov-badge { font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 8px; margin-top: 3px; }
+.ov-delta { font-size: 9.5px; margin-top: 3px; }
+.ov-text { font-size: 10.5px; color: var(--text-secondary); margin-top: 7px; line-height: 1.5; }
+.who-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.wl { font-size: 9.5px; color: var(--text-secondary); width: 80px; min-width: 80px; line-height: 1.2; }
+.wt { flex: 1; height: 7px; border-radius: 3px; background: var(--bg-tertiary); position: relative; overflow: hidden; }
+.wf { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.wth { position: absolute; top: 0; height: 100%; width: 1.5px; background: #A32D2D; opacity: 0.55; }
+.wv { font-size: 9.5px; font-weight: 500; width: 26px; text-align: right; }
+.wd { font-size: 9px; width: 26px; text-align: right; }
+.desig { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.dtag { font-size: 9px; font-weight: 500; padding: 2px 7px; border-radius: 8px; }
+.pos { color: #3B6D11; } .neg { color: #A32D2D; } .neu { color: var(--text-tertiary); }
+footer { font-size: 10px; color: var(--text-tertiary); margin-top: 20px; text-align: center; font-style: italic; }
+</style>
+</head>
+<body>
+<nav style="background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;font-family:sans-serif;">
+  <a href="index.html" style="font-size:14px;font-weight:500;color:#1D9E75;text-decoration:none;">Kanaleneiland Health Layers</a>
+  <div style="display:flex;gap:18px;">
+    <a href="bubble_map.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Bubble Map</a>
+    <a href="6p_criteria.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">6P Criteria</a>
+    <a href="cascade_map.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Cascade Map</a>
+    <a href="intervention_sequence.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Interventions</a>
+    <a href="full_intervention.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Full Simulator</a>
+    <a href="location_simulator.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Location Simulator</a>
+    <a href="sources.html" style="font-size:12px;color:#5f5e5a;text-decoration:none;">Sources</a>
+  </div>
+</nav>
+<div id="app">
+  <h1>Kanaleneiland — Full Intervention Simulator</h1>
+  <p class="subtitle">Adjust any slider across all six WHO 6P pillars · Scores stay visible on the right as you scroll · Scenario presets show the intervention pathway</p>
+  <div class="top-bar" id="presets-bar"></div>
+  <div class="layout">
+    <div class="sliders-col" id="sliders-col"></div>
+    <div class="scores-col" id="scores-col"></div>
+  </div>
+  <footer>Data: CBS OpenData Netherlands 86270ENG · Framework: WHO European Healthy Cities Phase VII 2019–2024 · Evidence: Marmot 2010, Holt-Lunstad 2015, PMC 2021, WHO GAPPA 2018, WHO AQG 2021</footer>
+</div>
+<script>
+const GROUPS = [
+  { id:'planet', label:'Planet — environment', color:'#639922',
+    controls:[
+      {id:'greenSpace',  label:'Green space %',             desc:'Pocket parks, verge planting · CBS park access index 54 vs 81.5 Utrecht',  color:'#639922', val:20},
+      {id:'treeCover',   label:'Tree cover %',               desc:'Canopy on Beneluxlaan · WHO benchmark ≥20% · Currently estimated <5%',    color:'#1D9E75', val:25},
+      {id:'parkDistance',label:'Park proximity',             desc:'300m access standard · WHO: ≥90% residents within 300m',                  color:'#27500A', val:50},
+      {id:'airQuality',  label:'Air quality index',          desc:'PM2.5/NO2 reduction · Trees filter Beneluxlaan road pollution · WHO AQG', color:'#534AB7', val:55},
+      {id:'heatExposure',label:'Heat stress (lower=better)', desc:'Urban heat island reduction · Tree canopy lowers surface temps · IPCC AR6',color:'#D85A30', val:76, inv:true},
+      {id:'biodiversity',label:'Biodiversity score',         desc:'Currently +9.3 vs Utrecht · Leverage canal corridor · Urban Mind 2021',   color:'#3B6D11', val:77},
+    ]},
+  { id:'place', label:'Place — built environment', color:'#1D9E75',
+    controls:[
+      {id:'bikeNetwork', label:'Cycle lane density',         desc:'Protected lanes on Beneluxlaan to station · WHO GAPPA: NCD prevention',   color:'#378ADD', val:40},
+      {id:'walkInfra',   label:'Walking infrastructure',     desc:'Pavements, crossings, lighting · 52% impairment rate needs access design', color:'#185FA5', val:45},
+      {id:'housingQual', label:'Housing quality score',      desc:'Cold/damp/overcrowding · WHO Housing Guidelines 2018 · Retrofit benefits', color:'#1D9E75', val:50},
+      {id:'serviceAccess',label:'Service accessibility',     desc:'GP 1.5km · Hospital 3.9km · Station 2.6km · WHO: 15 min walk standard',  color:'#0F6E56', val:42},
+    ]},
+  { id:'people', label:'People — health & wellbeing', color:'#534AB7',
+    controls:[
+      {id:'mentalHealth',label:'Mental health support',      desc:'Social prescribing, hubs · 18% anxiety risk vs 11.1% Utrecht · CBS',     color:'#534AB7', val:30},
+      {id:'loneliness',  label:'Loneliness programme',       desc:'Community connectors · Index 56 vs 68.4 Utrecht · Holt-Lunstad 2015',    color:'#D4537E', val:25},
+      {id:'physicalAct', label:'Physical activity offer',    desc:'Sports, exercise · 51% meet guidelines vs 56.7% Utrecht · WHO GAPPA',   color:'#7F77DD', val:40},
+      {id:'healthAccess',label:'Healthcare integration',     desc:'GP co-location · 80% outcomes from social determinants · CSDH 2008',    color:'#3C3489', val:48},
+    ]},
+  { id:'prosperity', label:'Prosperity — economic equity', color:'#BA7517',
+    controls:[
+      {id:'economicSupport',label:'Economic support hubs',   desc:'Income advice, job brokerage · 28.3% trouble making ends meet',          color:'#BA7517', val:20},
+      {id:'childPoverty',label:'Child poverty reduction',    desc:'In-school food, after-school · 33.6% vs 13.2% Utrecht · SDG 1+3',       color:'#854F0B', val:34, inv:true},
+      {id:'employment',  label:'Employment access',          desc:'Jobs via active travel to station · Station 2.6km limits access',        color:'#EF9F27', val:38},
+      {id:'financialRes',label:'Financial resilience',       desc:'Savings schemes · 25% no buffer vs 12% Utrecht · Marmot 2010',          color:'#633806', val:30},
+    ]},
+  { id:'participation', label:'Participation — social fabric', color:'#D4537E',
+    controls:[
+      {id:'socialCohesion',label:'Social cohesion score',    desc:'Shared spaces, events · Index 62.1 vs 64.1 Utrecht — smallest gap',     color:'#D4537E', val:62},
+      {id:'communitySpaces',label:'Community spaces',        desc:'Meeting places, gardens · Reduces loneliness + builds cohesion',         color:'#993556', val:30},
+      {id:'residentVoice',label:'Resident participation',    desc:'Co-design processes · WHO Phase VII mandatory requirement',              color:'#ED93B1', val:25},
+    ]},
+  { id:'peace', label:'Peace — governance', color:'#378ADD',
+    controls:[
+      {id:'governance',  label:'HiAP governance score',      desc:'Health in All Policies · WHO Phase VII: 4+ departments coordinating',   color:'#378ADD', val:20},
+      {id:'policyAlign', label:'Policy alignment',           desc:'Housing + transport + health + parks working together · HiAP',          color:'#185FA5', val:25},
+      {id:'monitoring',  label:'CBS indicator monitoring',   desc:'Annual reporting against WHO benchmark set · CBS 86270ENG dashboard',   color:'#0C447C', val:30},
+    ]},
+];
+
+const PRESETS = [
+  // 1 — unchanged
+  { id:'baseline', label:'Current baseline', color:'#888780',
+    v:{greenSpace:20,treeCover:25,parkDistance:50,airQuality:55,heatExposure:76,biodiversity:77,bikeNetwork:40,walkInfra:45,housingQual:50,serviceAccess:42,mentalHealth:30,loneliness:25,physicalAct:40,healthAccess:48,economicSupport:20,childPoverty:34,employment:38,financialRes:30,socialCohesion:62,communitySpaces:30,residentVoice:25,governance:20,policyAlign:25,monitoring:30}},
+
+  // 2 — unchanged
+  { id:'greenery', label:'Greenery only', color:'#639922',
+    v:{greenSpace:62,treeCover:52,parkDistance:76,airQuality:73,heatExposure:48,biodiversity:86,bikeNetwork:40,walkInfra:45,housingQual:50,serviceAccess:42,mentalHealth:30,loneliness:25,physicalAct:40,healthAccess:48,economicSupport:20,childPoverty:34,employment:38,financialRes:30,socialCohesion:62,communitySpaces:30,residentVoice:25,governance:20,policyAlign:25,monitoring:30}},
+
+  // 3 — unchanged
+  { id:'mobility', label:'+ Mobility', color:'#378ADD',
+    v:{greenSpace:62,treeCover:52,parkDistance:76,airQuality:73,heatExposure:48,biodiversity:86,bikeNetwork:80,walkInfra:76,housingQual:58,serviceAccess:66,mentalHealth:42,loneliness:38,physicalAct:62,healthAccess:56,economicSupport:20,childPoverty:34,employment:56,financialRes:30,socialCohesion:67,communitySpaces:48,residentVoice:32,governance:32,policyAlign:38,monitoring:42}},
+
+  // 4 — unchanged
+  { id:'economic', label:'Economic equity', color:'#BA7517',
+    v:{greenSpace:62,treeCover:52,parkDistance:76,airQuality:73,heatExposure:48,biodiversity:86,bikeNetwork:80,walkInfra:76,housingQual:70,serviceAccess:70,mentalHealth:62,loneliness:64,physicalAct:66,healthAccess:66,economicSupport:68,childPoverty:18,employment:70,financialRes:62,socialCohesion:74,communitySpaces:70,residentVoice:62,governance:58,policyAlign:62,monitoring:64}},
+
+  // 5 — Urban designers only: ONLY sliders a spatial designer physically controls.
+  // IN:  greenSpace (pocket parks, verge planting)
+  //      treeCover  (street trees, Beneluxlaan canopy)
+  //      parkDistance (park layout and access paths)
+  //      bikeNetwork  (protected cycle lanes)
+  //      walkInfra    (pavements, crossings, lighting, ramps)
+  //      communitySpaces (plazas, seating, community gardens)
+  // OUT: housing (landlord/government), serviceAccess (policy), mentalHealth (clinical),
+  //      loneliness (social programme), healthAccess (healthcare), economicSupport (policy),
+  //      childPoverty (governance), employment (economic policy), financialRes (policy),
+  //      socialCohesion (indirect outcome), residentVoice (governance), all peace sliders.
+  // All excluded sliders stay exactly at baseline values.
+  { id:'urban', label:'Urban designers', color:'#D4537E',
+    v:{greenSpace:75,treeCover:70,parkDistance:80,airQuality:55,heatExposure:76,biodiversity:88,bikeNetwork:80,walkInfra:78,housingQual:50,serviceAccess:42,mentalHealth:30,loneliness:25,physicalAct:40,healthAccess:48,economicSupport:20,childPoverty:34,employment:38,financialRes:30,socialCohesion:62,communitySpaces:72,residentVoice:25,governance:20,policyAlign:25,monitoring:30}},
+
+  // 6 — Highest health impact: only the sliders with the largest coefficient contribution
+  // to overall = 0.20*planet + 0.18*place + 0.17*people + 0.17*prosperity + 0.15*participation + 0.13*peace.
+  // Ranked by (pillar weight × slider weight within pillar):
+  //   economicSupport  → prosperity(0.17) × 0.30 = 0.051  ← #1 joint
+  //   childPoverty     → prosperity(0.17) × 0.30 = 0.051  ← #1 joint
+  //   greenSpace       → planet(0.20)    × 0.22 = 0.044  ← #3
+  //   bikeNetwork      → place(0.18)     × 0.30 = 0.054  ← #1 (highest single)
+  //   loneliness       → people(0.17)    × 0.28 = 0.048  ← top 3 people
+  //   mentalHealth     → people(0.17)    × 0.28 = 0.048
+  //   socialCohesion   → participation(0.15) × 0.38 = 0.057 ← HIGHEST single coefficient
+  // Only these 7 are raised; every other slider stays at baseline.
+  { id:'highimpact', label:'Highest health impact', color:'#534AB7',
+    v:{greenSpace:82,treeCover:25,parkDistance:50,airQuality:55,heatExposure:76,biodiversity:77,bikeNetwork:85,walkInfra:45,housingQual:50,serviceAccess:42,mentalHealth:82,loneliness:82,physicalAct:40,healthAccess:48,economicSupport:85,childPoverty:10,employment:38,financialRes:30,socialCohesion:85,communitySpaces:30,residentVoice:25,governance:20,policyAlign:25,monitoring:30}},
+
+  // 7 — unchanged
+  { id:'full', label:'Full WHO HiAP', color:'#1D9E75',
+    v:{greenSpace:82,treeCover:72,parkDistance:88,airQuality:86,heatExposure:28,biodiversity:91,bikeNetwork:88,walkInfra:86,housingQual:84,serviceAccess:84,mentalHealth:80,loneliness:77,physicalAct:82,healthAccess:80,economicSupport:82,childPoverty:9,employment:82,financialRes:77,socialCohesion:82,communitySpaces:82,residentVoice:80,governance:84,policyAlign:82,monitoring:84}},
+];
+
+const WHO_T = [
+  {label:'Planet',       key:'planet',        thr:70, color:'#639922'},
+  {label:'Place',        key:'place',          thr:68, color:'#1D9E75'},
+  {label:'People',       key:'people',         thr:72, color:'#534AB7'},
+  {label:'Prosperity',   key:'prosperity',     thr:75, color:'#BA7517'},
+  {label:'Participation',key:'participation',  thr:65, color:'#D4537E'},
+  {label:'Peace',        key:'peace',          thr:70, color:'#378ADD'},
+];
+
+let cur = {...PRESETS[0].v};
+let activeP = 'baseline';
+const base = {...PRESETS[0].v};
+
+function n(v){return Number(v)/100;}
+function calc(v){
+  const green=n(v.greenSpace),tree=n(v.treeCover),park=n(v.parkDistance);
+  const air=n(v.airQuality),heat=n(v.heatExposure),bio=n(v.biodiversity);
+  const bike=n(v.bikeNetwork),walk=n(v.walkInfra),hous=n(v.housingQual),svc=n(v.serviceAccess);
+  const mh=n(v.mentalHealth),lone=n(v.loneliness),pa=n(v.physicalAct),ha=n(v.healthAccess);
+  const econ=n(v.economicSupport),cp=1-n(v.childPoverty),emp=n(v.employment),fr=n(v.financialRes);
+  const coh=n(v.socialCohesion),cs=n(v.communitySpaces),rv=n(v.residentVoice);
+  const gov=n(v.governance),pol=n(v.policyAlign),mon=n(v.monitoring);
+  const planet=0.22*green+0.18*tree+0.18*park+0.15*air+0.15*(1-heat)+0.12*bio;
+  const place=0.30*bike+0.25*walk+0.25*hous+0.20*svc;
+  const people=0.28*mh+0.28*lone+0.24*pa+0.20*ha;
+  const prosperity=0.30*econ+0.30*cp+0.22*emp+0.18*fr;
+  const participation=0.38*coh+0.35*cs+0.27*rv;
+  const peace=0.40*gov+0.35*pol+0.25*mon;
+  const walk2=0.35*bike+0.30*park+0.20*green+0.15*air;
+  const hh=0.40*tree+0.25*green+0.20*air+0.15*(1-heat);
+  const al=0.50*walk2+0.30*green+0.20*bike;
+  const ch=0.50*hh+0.30*tree+0.20*air;
+  const overall=0.20*planet+0.18*place+0.17*people+0.17*prosperity+0.15*participation+0.13*peace;
+  return {planet:planet*100,place:place*100,people:people*100,prosperity:prosperity*100,participation:participation*100,peace:peace*100,activeLiving:al*100,climateHealth:ch*100,overall:overall*100};
+}
+function ds(a,b){const d=b-a;if(Math.abs(d)<0.1)return{str:'',cls:'neu'};return{str:(d>0?'+':'')+d.toFixed(1),cls:d>0?'pos':'neg'};}
+const baseS = calc(base);
+
+const UD_VISIBLE   = new Set(['greenSpace','treeCover','parkDistance','bikeNetwork','walkInfra','communitySpaces']);
+const HIGH_VISIBLE = new Set(['socialCohesion','bikeNetwork','economicSupport','childPoverty','mentalHealth','loneliness','greenSpace']);
+
+function renderSliders(){
+  const col = document.getElementById('sliders-col');
+  col.innerHTML = '';
+  const isUD   = activeP === 'urban';
+  const isHigh = activeP === 'highimpact';
+
+  GROUPS.forEach(g => {
+    const visible = g.controls.filter(c => {
+      if (isUD)   return UD_VISIBLE.has(c.id);
+      if (isHigh) return HIGH_VISIBLE.has(c.id);
+      return true;
+    });
+    if (visible.length === 0) return;
+
+    const hidden = g.controls.length - visible.length;
+    let note = '';
+    if (hidden > 0 && (isUD || isHigh)) {
+      const reason = isUD
+        ? `${hidden} indicator${hidden>1?'s':''} hidden — not directly controlled by urban designers`
+        : `${hidden} indicator${hidden>1?'s':''} hidden — lower health impact coefficient`;
+      note = `<div style="font-size:9px;color:var(--text-tertiary);font-style:italic;margin-bottom:8px;padding:4px 8px;background:var(--bg-secondary);border-radius:5px;">${reason}</div>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'pcard';
+    card.innerHTML = `<div class="pcard-title" style="color:${g.color}">${g.label}</div>${note}` +
+      visible.map(c=>`<div class="ctrl">
+        <div class="ch"><span class="cl" style="color:${c.color}">${c.label}</span><span class="cv" style="color:${c.color}" id="cv-${c.id}">${cur[c.id]}</span></div>
+        <div class="cd">${c.desc}</div>
+        <input type="range" min="0" max="100" step="1" value="${cur[c.id]}" id="sl-${c.id}" style="accent-color:${c.color}">
+      </div>`).join('');
+    col.appendChild(card);
+
+    visible.forEach(c=>{
+      document.getElementById('sl-'+c.id).oninput = function(){
+        cur[c.id]=parseInt(this.value);
+        document.getElementById('cv-'+c.id).textContent=this.value;
+        activeP='';
+        renderScores();
+        renderPresets();
+      };
+    });
+  });
+}
+
+function renderScores(){
+  const s = calc(cur);
+  const col = document.getElementById('scores-col');
+  col.innerHTML = '';
+
+  const ov=s.overall,ob=baseS.overall,od=ov-ob;
+  const ovc=ov>=68?'#3B6D11':ov>=52?'#BA7517':'#A32D2D';
+  const ovl=ov>=68?'WHO target':ov>=52?'Moderate':ov>=35?'Weak':'Critical';
+  const ovTxt=ov>=68?'Approaching WHO designation. All six pillars showing meaningful progress.':ov>=52?'Moderate improvement. Economic equity and governance remain the biggest gaps.':ov>=35?'Single-pillar interventions insufficient. All pillars must move together (HiAP).':'Current baseline. Kanaleneiland fails WHO benchmarks on four of six pillars.';
+  const oCard=document.createElement('div');
+  oCard.className='overall';
+  oCard.style.borderColor=ovc;
+  oCard.innerHTML=`<div class="ov-row">
+    <div><div style="font-size:9.5px;color:var(--text-tertiary)">Overall healthy urban layer</div><div class="ov-num" style="color:${ovc}">${ov.toFixed(1)}</div></div>
+    <span class="ov-badge" style="background:${ovc}18;color:${ovc};border:0.5px solid ${ovc}">${ovl}</span>
+  </div>
+  <div class="ov-delta ${od>0.1?'pos':od<-0.1?'neg':'neu'}">${Math.abs(od)>0.1?(od>0?'▲ +':'▼ ')+od.toFixed(1)+' from baseline':''}</div>
+  <div class="ov-text">${ovTxt}</div>`;
+  col.appendChild(oCard);
+
+  const s6Card=document.createElement('div');
+  s6Card.className='pcard';
+  s6Card.innerHTML='<div class="pcard-title">WHO 6P pillar scores</div><div class="sc6" id="sc6"></div>';
+  col.appendChild(s6Card);
+  const sc6=s6Card.querySelector('#sc6');
+  WHO_T.forEach(w=>{
+    const sv=s[w.key],bv=baseS[w.key],d=ds(bv,sv),meets=sv>=w.thr;
+    sc6.innerHTML+=`<div class="sc">
+      <div class="sc-l" style="color:${w.color}">${w.label}</div>
+      <div class="sc-v" style="color:${meets?w.color:'#A32D2D'}">${sv.toFixed(1)}</div>
+      <div class="sc-d ${d.cls}">${d.str?(d.str.startsWith('+')?'▲':'▼')+' '+d.str:meets?'Meets WHO ✓':'Below WHO ('+w.thr+')'}</div>
+      <div class="sc-bar"><div class="sc-bf" style="width:${sv.toFixed(1)}%;background:${meets?w.color:'#A32D2D'}"></div></div>
+    </div>`;
+  });
+
+  const hlCard=document.createElement('div');
+  hlCard.className='pcard';
+  hlCard.innerHTML='<div class="pcard-title">Health layers</div><div class="sc6" id="hl6"></div>';
+  col.appendChild(hlCard);
+  const hl6=hlCard.querySelector('#hl6');
+  [{key:'activeLiving',label:'Active living',color:'#639922'},{key:'climateHealth',label:'Climate health',color:'#1D9E75'}].forEach(p=>{
+    const sv=s[p.key],bv=baseS[p.key],d=ds(bv,sv);
+    hl6.innerHTML+=`<div class="sc">
+      <div class="sc-l" style="color:${p.color}">${p.label}</div>
+      <div class="sc-v" style="color:${p.color}">${sv.toFixed(1)}</div>
+      <div class="sc-d ${d.cls}">${d.str?(d.str.startsWith('+')?'▲':'▼')+' '+d.str:''}</div>
+      <div class="sc-bar"><div class="sc-bf" style="width:${sv.toFixed(1)}%;background:${p.color}"></div></div>
+    </div>`;
+  });
+
+  const whoCard=document.createElement('div');
+  whoCard.className='pcard';
+  whoCard.innerHTML='<div class="pcard-title">WHO benchmark comparison</div><div id="whorows"></div>';
+  col.appendChild(whoCard);
+  const wr=whoCard.querySelector('#whorows');
+  WHO_T.forEach(w=>{
+    const sv=s[w.key],bv=baseS[w.key],meets=sv>=w.thr,d=ds(bv,sv);
+    wr.innerHTML+=`<div class="who-row">
+      <span class="wl" style="color:${w.color}">${w.label}<br><span style="font-size:8.5px;color:var(--text-tertiary)">thr: ${w.thr}</span></span>
+      <div class="wt"><div class="wf" style="width:${Math.min(100,sv)}%;background:${meets?w.color:'#A32D2D'}"></div><div class="wth" style="left:${w.thr}%"></div></div>
+      <span class="wv" style="color:${meets?w.color:'#A32D2D'}">${sv.toFixed(0)}</span>
+      <span class="wd ${d.cls}">${d.str}</span>
+    </div>`;
+  });
+  wr.innerHTML+=`<div style="font-size:9px;color:var(--text-tertiary);margin-top:5px;display:flex;align-items:center;gap:4px;"><div style="width:1.5px;height:9px;background:#A32D2D;opacity:0.55;"></div>Red line = WHO Phase VII threshold</div>`;
+
+  const passing=WHO_T.filter(w=>s[w.key]>=w.thr);
+  const failing=WHO_T.filter(w=>s[w.key]<w.thr);
+  const dCard=document.createElement('div');
+  dCard.className='pcard';
+  dCard.innerHTML=`<div class="pcard-title">Designation readiness — ${passing.length}/6 pillars</div>
+    <div class="desig">
+      ${passing.map(w=>`<span class="dtag" style="background:${w.color}18;color:${w.color};border:0.5px solid ${w.color}44">✓ ${w.label}</span>`).join('')}
+      ${failing.map(w=>`<span class="dtag" style="background:#FCEBEB;color:#A32D2D;border:0.5px solid #F09595">✗ ${w.label}</span>`).join('')}
+    </div>
+    <div style="font-size:9px;color:var(--text-tertiary);margin-top:6px;">All 6 pillars must meet threshold for WHO Healthy Cities designation</div>`;
+  col.appendChild(dCard);
+}
+
+function renderPresets(){
+  const bar=document.getElementById('presets-bar');
+  bar.innerHTML='<span style="font-size:10px;color:var(--text-tertiary);align-self:center;margin-right:3px;">Scenario:</span>';
+  PRESETS.forEach(p=>{
+    const btn=document.createElement('button');
+    btn.className='preset'+(activeP===p.id?' on':'');
+    btn.style.borderColor=p.color;
+    btn.style.color=activeP===p.id?'#fff':p.color;
+    if(activeP===p.id)btn.style.background=p.color;
+    btn.textContent=p.label;
+    btn.onclick=()=>{cur={...p.v};activeP=p.id;renderSliders();renderScores();renderPresets();};
+    bar.appendChild(btn);
+  });
+}
+
+renderPresets();
+renderSliders();
+renderScores();
+</script>
+</body>
+</html>

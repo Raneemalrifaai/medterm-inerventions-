@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanaleneiland — Location Intervention Simulator</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#ffffff; --bg2:#f5f4f0; --bg3:#eeede8;
+  --text:#1a1a18; --muted:#5f5e5a; --dim:#888780;
+  --border:rgba(0,0,0,0.10);
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#e8e6de;--muted:#9c9a92;--dim:#6b6a64;--border:rgba(255,255,255,0.10);}
+}
+body { font-family:var(--font); background:var(--bg3); color:var(--text); min-height:100vh; }
+
+nav { background:var(--bg); border-bottom:0.5px solid var(--border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:1000; }
+.nav-brand { font-size:14px; font-weight:500; color:#1D9E75; text-decoration:none; }
+.nav-links { display:flex; gap:14px; flex-wrap:wrap; }
+.nav-links a { font-size:11px; color:var(--muted); text-decoration:none; }
+.nav-links a:hover, .nav-links a.active { color:var(--text); font-weight:500; }
+
+.page-hdr { padding:14px 20px 10px; }
+.page-hdr h1 { font-size:17px; font-weight:500; margin-bottom:2px; }
+.page-hdr p  { font-size:11px; color:var(--muted); }
+
+/* 3-column master grid */
+.master {
+  display:grid;
+  grid-template-columns:300px 1fr 300px;
+  gap:0;
+  height:calc(100vh - 98px);
+  padding:0 12px 12px;
+}
+
+/* ── LEFT COLUMN: location buttons + map ── */
+.left-col { display:flex; flex-direction:column; gap:8px; padding-right:10px; }
+
+.loc-btn {
+  display:flex; align-items:flex-start; gap:9px;
+  padding:9px 11px; background:var(--bg);
+  border:1.5px solid var(--border); border-radius:10px;
+  cursor:pointer; transition:all .13s; text-align:left;
+  font-family:var(--font); color:var(--text); width:100%;
+}
+.loc-btn:hover { border-color:rgba(0,0,0,0.22); }
+.loc-btn.active { border-color:var(--lc); box-shadow:0 0 0 2px color-mix(in srgb, var(--lc) 20%, transparent); }
+.loc-num {
+  width:22px; height:22px; border-radius:50%;
+  background:var(--lc); color:#fff;
+  font-size:10px; font-weight:600;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:2px;
+}
+.loc-name { font-size:11.5px; font-weight:500; margin-bottom:1px; }
+.loc-addr { font-size:9.5px; color:var(--muted); }
+
+.map-wrap { flex:1; border-radius:10px; overflow:hidden; border:0.5px solid var(--border); min-height:220px; }
+#map { width:100%; height:100%; }
+.custom-pin {
+  width:13px; height:13px; border-radius:50%;
+  border:2.5px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,0.45);
+  transition:transform .25s;
+}
+.custom-pin.big { transform:scale(1.9); }
+
+/* ── MIDDLE COLUMN: problem + slide simulator ── */
+.mid-col { overflow-y:auto; padding:0 10px; }
+
+/* Problem banner */
+.prob-banner {
+  border-radius:10px; padding:13px 14px; margin-bottom:10px;
+  border:0.5px solid var(--border); background:var(--bg);
+}
+.prob-banner-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.prob-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.prob-banner h2 { font-size:14px; font-weight:500; }
+.prob-banner .sub { font-size:10.5px; color:var(--muted); margin-bottom:9px; line-height:1.5; }
+.prob-list { display:flex; flex-direction:column; gap:5px; }
+.prob-item {
+  display:flex; align-items:flex-start; gap:7px;
+  padding:7px 9px; border-radius:7px;
+  border-left:3px solid; background:var(--bg2);
+}
+.prob-item-title { font-size:11px; font-weight:500; margin-bottom:1px; }
+.prob-item-desc  { font-size:10px; color:var(--muted); line-height:1.45; }
+
+/* Slide tabs */
+.slide-tabs { display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
+.slide-tab-lbl { font-size:10px; color:var(--dim); margin-right:2px; }
+.stab {
+  font-size:10.5px; padding:4px 11px; border-radius:14px;
+  border:0.5px solid; background:transparent; cursor:pointer;
+  transition:all .12s; white-space:nowrap; font-family:var(--font);
+}
+.stab.on { color:#fff !important; }
+
+/* Intervention slide */
+.int-slide {
+  background:var(--bg); border:0.5px solid var(--border);
+  border-radius:10px; padding:13px 14px; margin-bottom:8px;
+}
+.int-slide-hdr { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.int-num-circle {
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:600; color:#fff; flex-shrink:0;
+}
+.int-slide h3 { font-size:13px; font-weight:500; }
+.int-who { font-size:9px; color:var(--muted); font-style:italic; margin-bottom:6px; }
+.int-desc { font-size:11px; color:var(--muted); line-height:1.6; margin-bottom:8px; }
+
+/* Slider inside slide */
+.slide-slider-wrap { background:var(--bg2); border-radius:7px; padding:9px 11px; }
+.ssl-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:1px; }
+.ssl-label { font-size:10.5px; font-weight:500; }
+.ssl-val   { font-size:10.5px; font-weight:600; }
+.ssl-impact { font-size:9.5px; color:var(--muted); margin-bottom:4px; line-height:1.4; }
+input[type=range] { width:100%; margin:0; }
+.ud-tag { font-size:8px; padding:1px 4px; border-radius:5px; background:#E1F5EE; color:#0F6E56; margin-left:3px; font-weight:500; }
+
+/* ── RIGHT COLUMN: live scores ── */
+.right-col { overflow-y:auto; padding-left:10px; }
+.pcard { background:var(--bg); border:0.5px solid var(--border); border-radius:9px; padding:10px 12px; margin-bottom:8px; }
+.pcard-title { font-size:9.5px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; padding-bottom:5px; border-bottom:0.5px solid var(--border); }
+.sc6 { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.sc { background:var(--bg2); border-radius:6px; padding:6px 8px; border:0.5px solid var(--border); }
+.sc-l { font-size:8.5px; color:var(--dim); }
+.sc-v { font-size:15px; font-weight:500; margin:1px 0; }
+.sc-d { font-size:8.5px; }
+.sc-bar { height:3px; border-radius:2px; background:var(--border); margin-top:3px; overflow:hidden; }
+.sc-bf { height:100%; border-radius:2px; transition:width .35s; }
+.overall { border:1.5px solid; border-radius:9px; padding:11px 12px; background:var(--bg); margin-bottom:8px; }
+.ov-row { display:flex; justify-content:space-between; align-items:flex-start; }
+.ov-num { font-size:30px; font-weight:500; line-height:1; }
+.ov-badge { font-size:9.5px; font-weight:500; padding:2px 7px; border-radius:7px; margin-top:2px; }
+.ov-delta { font-size:9px; margin-top:3px; }
+.ov-text { font-size:9.5px; color:var(--muted); margin-top:5px; line-height:1.5; }
+.who-row { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+.wl { font-size:8.5px; color:var(--muted); width:68px; min-width:68px; line-height:1.2; }
+.wt { flex:1; height:5px; border-radius:3px; background:var(--bg3); position:relative; overflow:hidden; }
+.wf { height:100%; border-radius:3px; transition:width .35s; }
+.wth { position:absolute; top:0; height:100%; width:1.5px; background:#A32D2D; opacity:0.5; }
+.wv { font-size:9px; font-weight:500; width:22px; text-align:right; }
+.wd { font-size:8px; width:22px; text-align:right; }
+.desig { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
+.dtag { font-size:8.5px; font-weight:500; padding:2px 5px; border-radius:6px; }
+.pos{color:#3B6D11;} .neg{color:#A32D2D;} .neu{color:var(--dim);}
+
+.placeholder-msg { display:flex; align-items:center; justify-content:center; height:200px; font-size:13px; color:var(--dim); text-align:center; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="index.html">Kanaleneiland Health Layers</a>
+  <div class="nav-links">
+    <a href="bubble_map.html">Bubble Map</a>
+    <a href="6p_criteria.html">6P Criteria</a>
+    <a href="cascade_map.html">Cascade Map</a>
+    <a href="intervention_sequence.html">Interventions</a>
+    <a href="full_intervention.html">Full Simulator</a>
+    <a href="location_simulator.html" class="active">Location Simulator</a>
+    <a href="sources.html">Sources</a>
+  </div>
+</nav>
+
+<div class="page-hdr">
+  <h1>Location Intervention Simulator</h1>
+  <p>Select a location → see problems → explore interventions → adjust sliders → watch WHO scores update live</p>
+</div>
+
+<div class="master">
+
+  <!-- LEFT: location selector + map -->
+  <div class="left-col">
+    <div id="loc-buttons"></div>
+    <div class="map-wrap"><div id="map"></div></div>
+  </div>
+
+  <!-- MIDDLE: problems + slides -->
+  <div class="mid-col" id="mid-col">
+    <div class="placeholder-msg">← Select a location to begin</div>
+  </div>
+
+  <!-- RIGHT: live WHO scores -->
+  <div class="right-col" id="right-col">
+    <div class="placeholder-msg">Scores will appear here</div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+const LOCS = [
+  {
+    id:'roosevelt', num:'01', color:'#E24B4A',
+    name:'Rooseveltlaan / 24 Oktoberplein',
+    addr:'52.07857536355583, 5.082849388893302',
+    lat:52.07857536355583, lng:5.082849388893302,
+    tagline:'District gateway · 3527 BA Utrecht',
+    problems:[
+      { title:'Hostile pedestrian crossings', color:'#E24B4A',
+        desc:'Wide multi-lane junction with no shade, no refuge islands, and no pedestrian priority phases. With 52% of residents having a physical impairment, every crossing is a daily health risk.' },
+      { title:'Traffic noise & air pollution', color:'#E24B4A',
+        desc:'Utrecht is the noisiest municipality in the Netherlands. This junction feeds A2 ring-road traffic. Estimated >60 dB Lden — the cardiovascular disease threshold. NO₂ and PM2.5 exceed WHO AQG 2021 with zero tree buffer.' },
+      { title:'No social gathering space', color:'#BA7517',
+        desc:'Oktoberplein is a traffic roundabout — no seating, no greenery, no activation. Eliminates any chance of spontaneous social contact. Loneliness index is already 12 points below Utrecht average.' },
+      { title:'Cycle route gap to station', color:'#BA7517',
+        desc:'Station is 2.6 km away. Rooseveltlaan is the main corridor but has no continuous protected cycle lane. WHO GAPPA identifies this as the biggest NCD prevention gap in the district.' },
+    ],
+    slides:[
+      {
+        num:1, color:'#639922',
+        title:'Green public square — convert Oktoberplein',
+        who:'Planet + Participation · PMC Green Space Review 2021',
+        desc:'Convert the traffic roundabout into a planted square with shade trees, social seating, a water feature, and biodiversity-rich planting using the canal corridor asset.',
+        key:'greenSpace', baseVal:20, intVal:75, label:'Green space %', ud:true,
+        impact:'Raising this from 20 → 75 delivers four simultaneous health returns: air quality filtration, mental restoration, heat reduction (~1°C per 10% canopy), and social cohesion. Park access index rises from 27 toward the WHO threshold of 80.',
+        accentColor:'#639922',
+      },
+      {
+        num:2, color:'#1D9E75',
+        title:'Street tree avenue — full Rooseveltlaan',
+        who:'Planet · WHO AQG 2021 · Utrecht Green City Accord',
+        desc:'Double-row planting of large-canopy trees (lime, plane) along both sides of Rooseveltlaan from the new Papendorp bridge to Beneluxlaan.',
+        key:'treeCover', baseVal:25, intVal:72, label:'Tree cover %', ud:true,
+        impact:'Each 10% increase in canopy cover reduces mean radiant temperature by ~1°C and filters significant PM2.5 and NO₂. Currently estimated <5% — raising to 72% addresses WHO benchmark of ≥20% and reduces the cardiovascular burden of air pollution for all residents.',
+        accentColor:'#1D9E75',
+      },
+      {
+        num:3, color:'#378ADD',
+        title:'Protected cycle lane — Rooseveltlaan to station',
+        who:'Place · WHO GAPPA 2018–2030',
+        desc:'Continuous bi-directional protected cycle lane from the new Papendorp bridge to the Beneluxlaan tram stop, using the bridge opening as political momentum.',
+        key:'bikeNetwork', baseVal:40, intVal:82, label:'Cycle lane density', ud:true,
+        impact:'Raising cycle lane density removes the 2.6 km station barrier. Station journey drops to under 8 minutes by bike. Unlocks employment access for 22,000 residents. WHO GAPPA: daily active travel is the most cost-effective NCD intervention available — every point here reduces cardiovascular disease risk.',
+        accentColor:'#378ADD',
+      },
+      {
+        num:4, color:'#534AB7',
+        title:'Accessible crossing redesign',
+        who:'People + Place · WHO Housing & Health Guidelines',
+        desc:'Raised crossings at all junction arms, tactile paving, shorter crossing distances with central refuge islands, and pedestrian priority signal phases.',
+        key:'walkInfra', baseVal:45, intVal:80, label:'Walking infrastructure', ud:true,
+        impact:'Directly addresses the 52% physical impairment rate. Raised crossings reduce vehicle speeds, increase pedestrian safety and dwell time. Better walking infrastructure is the enabling condition for active travel — without safe crossings, no other mobility intervention reaches its full potential.',
+        accentColor:'#534AB7',
+      },
+    ],
+  },
+
+  {
+    id:'nova', num:'02', color:'#BA7517',
+    name:'Winkelcentrum Nova',
+    addr:'52.07492451842476, 5.094907407873234',
+    lat:52.07492451842476, lng:5.094907407873234,
+    tagline:'Hammarskjöldhof · 3527 HD Utrecht',
+    problems:[
+      { title:'Car-dominant access — unsafe for pedestrians', color:'#E24B4A',
+        desc:'The municipality\'s own December 2024 assessment flags traffic safety around Nova as a priority problem. The car park dominates the entire frontage and pedestrian routes to entrances are unclear and dangerous.' },
+      { title:'No quality public space outside', color:'#E24B4A',
+        desc:'Hammarskjöldhof functions as a car park extension. No seating, no trees, no outdoor social life — despite 40+ shops and thousands of daily visitors. A missed social infrastructure opportunity every single day.' },
+      { title:'Zero green space within 300m', color:'#BA7517',
+        desc:'Park access index is 27 vs 81.5 Utrecht average — the largest built-environment deficit in the district. Nova\'s car park represents ~5,000 m² of sealed surface that could be partially de-sealed and greened.' },
+      { title:'Resident exclusion — participation failure', color:'#BA7517',
+        desc:'Residents were formally bypassed when new billboard lighting was installed in 2020. This is a WHO Phase VII mandatory participation failure with direct sleep health consequences for surrounding households.' },
+    ],
+    slides:[
+      {
+        num:1, color:'#D4537E',
+        title:'Community square — redesign Hammarskjöldhof',
+        who:'Participation + Planet · Holt-Lunstad 2015',
+        desc:'Remove car parking from the square frontage entirely. Redesign with trees, facing benches, a community garden strip, and formal Friday market zone.',
+        key:'communitySpaces', baseVal:30, intVal:76, label:'Community spaces', ud:true,
+        impact:'Community spaces are one of the highest-coefficient indicators for the Participation pillar (weight: 0.35). Raising this from 30 → 76 directly reduces the loneliness gap — benches that face each other are a clinical intervention. Holt-Lunstad 2015: loneliness has mortality risk equivalent to 15 cigarettes per day.',
+        accentColor:'#D4537E',
+      },
+      {
+        num:2, color:'#639922',
+        title:'De-seal 30% of car park — pocket park + tree grid',
+        who:'Planet · Utrecht Green Structure Plan 2030',
+        desc:'Replace the outer rows of the car park with permeable paving, tree pits, and a children\'s play area. Use biodiversity-rich planting echoing the canal corridor asset.',
+        key:'greenSpace', baseVal:20, intVal:65, label:'Green space %', ud:true,
+        impact:'This creates the only green space within 300m for ~4,000 residents — directly addressing the 27-point park access deficit. Every increase here also reduces urban heat island, filters PM2.5, and triggers the mental restoration pathway (cortisol reduction, blood pressure reduction) documented in PMC Systematic Review 2021.',
+        accentColor:'#639922',
+      },
+      {
+        num:3, color:'#378ADD',
+        title:'Safe pedestrian & cycle routing to all entrances',
+        who:'Place · WHO GAPPA 2018–2030',
+        desc:'Separated cycle path and raised pedestrian-priority crossings at every car park entry point. Wayfinding signage and continuous paving from Rooseveltlaan and Beneluxlaan.',
+        key:'walkInfra', baseVal:45, intVal:76, label:'Walking infrastructure', ud:true,
+        impact:'Nova currently fails the WHO Place pillar. Raising walking infrastructure to 76 moves the Place score meaningfully toward the 68 threshold. Safe access is the prerequisite for active travel — without it, the health centre, gym and pharmacy are only reachable by car, eliminating all incidental physical activity.',
+        accentColor:'#378ADD',
+      },
+      {
+        num:4, color:'#BA7517',
+        title:'Economic support hub in 2024 redevelopment',
+        who:'Prosperity · Marmot Review 2010',
+        desc:'Embed income advice, debt counselling, and job brokerage alongside the existing health centre in the live redevelopment process. The brief is being written now — this must be in it.',
+        key:'economicSupport', baseVal:20, intVal:62, label:'Economic support hubs', ud:true,
+        impact:'28.3% of Kanaleneiland residents struggle to make ends meet vs 18.4% Utrecht. Economic support is a joint highest-coefficient indicator in the Prosperity pillar (weight: 0.30). Marmot 2010: economic insecurity causally produces poor health through five simultaneous pathways — it is the upstream driver of the loneliness, mental health, and physical health gaps.',
+        accentColor:'#BA7517',
+      },
+    ],
+  },
+
+  {
+    id:'benelux', num:'03', color:'#534AB7',
+    name:'Beneluxlaan',
+    addr:'52°04\'20.8"N 5°05\'56.2"E',
+    lat:52.072444, lng:5.099000,
+    tagline:'Noord–Zuid district spine · Tram corridor',
+    problems:[
+      { title:'Highest noise exposure in the district', color:'#E24B4A',
+        desc:'Beneluxlaan carries through-traffic, the tram, and ring-road feeders. Utrecht is NL\'s noisiest city. Estimated 60–65 dB Lden — the cardiovascular disease threshold. No sound buffer of any kind exists.' },
+      { title:'Zero tree canopy — urban heat spine', color:'#E24B4A',
+        desc:'6-lane road with no street trees running through the district centre. Functions as a heat collector in summer. Wageningen research: 10% canopy cover reduces mean radiant temperature by ~1°C. Currently estimated at 0%.' },
+      { title:'No continuous protected cycle lane', color:'#E24B4A',
+        desc:'Key north-south corridor but disconnects the district from the station, schools, and the new Papendorp bridge. March 2025 resurfacing was completed without adding a protected lane — a critical missed window.' },
+      { title:'Air quality corridor into residential streets', color:'#BA7517',
+        desc:'PM2.5 and NO₂ concentrations are highest along arterials. Beneluxlaan channels road pollution directly into surrounding residential streets with no vegetation buffer between traffic and homes.' },
+    ],
+    slides:[
+      {
+        num:1, color:'#378ADD',
+        title:'Continuous protected cycle lane — full length',
+        who:'Place + Prosperity · WHO GAPPA 2018 · CBS station gap',
+        desc:'Bi-directional protected lane from 24 Oktoberplein to Churchilllaan. Reassign one car lane per direction — the tram already provides through-traffic capacity.',
+        key:'bikeNetwork', baseVal:40, intVal:85, label:'Cycle lane density', ud:true,
+        impact:'This is the single highest-impact urban design intervention in the whole district. Raising cycle lane density to 85 removes the 2.6 km station barrier for 22,000 residents — the Place pillar rises sharply and the Prosperity pillar gains through improved employment access. WHO GAPPA: daily cycling is one of the most cost-effective NCD prevention measures available.',
+        accentColor:'#378ADD',
+      },
+      {
+        num:2, color:'#1D9E75',
+        title:'Double-row tree avenue — full length of Beneluxlaan',
+        who:'Planet · Utrecht Green City Accord · WHO AQG 2021',
+        desc:'Large-canopy trees (lime, plane, or oak) planted in a double row along both sides of the full road length. Trees take priority over any remaining street parking.',
+        key:'treeCover', baseVal:25, intVal:78, label:'Tree cover %', ud:true,
+        impact:'Raising tree cover from <5% to 78% simultaneously: reduces noise (vegetation absorbs and diffracts sound waves), filters PM2.5 and NO₂, creates a shade corridor reducing mean radiant temperature by ~6–7°C, and delivers the mental restoration pathway proven in the King\'s College Urban Mind Study 2021. The Planet pillar rises across all sub-indicators in one investment.',
+        accentColor:'#1D9E75',
+      },
+      {
+        num:3, color:'#D4537E',
+        title:'Walking route with social activation',
+        who:'People + Participation · Holt-Lunstad 2015',
+        desc:'Wider pavements with continuous surfaces, facing benches every 80–100m, improved tram stop shelters designed as social pause points, and raised crossings at all side streets.',
+        key:'walkInfra', baseVal:45, intVal:78, label:'Walking infrastructure', ud:true,
+        impact:'Beneluxlaan currently has no reason to stop. Raising walking infrastructure transforms the road from a barrier into a social corridor — facing benches create the spontaneous contact that reduces loneliness. The People pillar (loneliness weight 0.28) and Participation pillar (community weight 0.35) both move. Holt-Lunstad: reducing isolation has greater mortality impact than treating obesity.',
+        accentColor:'#D4537E',
+      },
+      {
+        num:4, color:'#BA7517',
+        title:'Green corridors — cross-streets to Columbus Park + canal',
+        who:'Planet + Place · PMC Systematic Review 2021',
+        desc:'Design 3–4 selected cross-streets as planted green corridors connecting Beneluxlaan to Columbus Park and the Amsterdam-Rijnkanaal. Planted, traffic-calmed, with continuous cycling and walking surfaces.',
+        key:'parkDistance', baseVal:50, intVal:74, label:'Park proximity', ud:true,
+        impact:'Raises park proximity from 50 to 74 — closing the gap toward the WHO ≥80 standard. Green corridors multiply the health value of Columbus Park (currently underused) and the canal (biodiversity already +9.3 vs Utrecht). PMC 2021: accessible green space delivers three simultaneous health pathways — harm reduction, mental restoration, and social capacity building.',
+        accentColor:'#BA7517',
+      },
+    ],
+  },
+];
+
+// ═══════════════════════════════════════════════════════════
+// WHO SCORING (identical formula to full_intervention.html)
+// ═══════════════════════════════════════════════════════════
+const BASE = {
+  greenSpace:20,treeCover:25,parkDistance:50,airQuality:55,heatExposure:76,biodiversity:77,
+  bikeNetwork:40,walkInfra:45,housingQual:50,serviceAccess:42,
+  mentalHealth:30,loneliness:25,physicalAct:40,healthAccess:48,
+  economicSupport:20,childPoverty:34,employment:38,financialRes:30,
+  socialCohesion:62,communitySpaces:30,residentVoice:25,
+  governance:20,policyAlign:25,monitoring:30
+};
+const WHO_T = [
+  {label:'Planet',key:'planet',thr:70,color:'#639922'},
+  {label:'Place',key:'place',thr:68,color:'#1D9E75'},
+  {label:'People',key:'people',thr:72,color:'#534AB7'},
+  {label:'Prosperity',key:'prosperity',thr:75,color:'#BA7517'},
+  {label:'Participation',key:'participation',thr:65,color:'#D4537E'},
+  {label:'Peace',key:'peace',thr:70,color:'#378ADD'},
+];
+function nv(v){return Number(v)/100;}
+function calc(overrides){
+  const v={...BASE,...overrides};
+  const green=nv(v.greenSpace),tree=nv(v.treeCover),park=nv(v.parkDistance);
+  const air=nv(v.airQuality),heat=nv(v.heatExposure),bio=nv(v.biodiversity);
+  const bike=nv(v.bikeNetwork),walk=nv(v.walkInfra),hous=nv(v.housingQual),svc=nv(v.serviceAccess);
+  const mh=nv(v.mentalHealth),lone=nv(v.loneliness),pa=nv(v.physicalAct),ha=nv(v.healthAccess);
+  const econ=nv(v.economicSupport),cp=1-nv(v.childPoverty),emp=nv(v.employment),fr=nv(v.financialRes);
+  const coh=nv(v.socialCohesion),cs=nv(v.communitySpaces),rv=nv(v.residentVoice);
+  const gov=nv(v.governance),pol=nv(v.policyAlign),mon=nv(v.monitoring);
+  const planet=0.22*green+0.18*tree+0.18*park+0.15*air+0.15*(1-heat)+0.12*bio;
+  const place=0.30*bike+0.25*walk+0.25*hous+0.20*svc;
+  const people=0.28*mh+0.28*lone+0.24*pa+0.20*ha;
+  const prosperity=0.30*econ+0.30*cp+0.22*emp+0.18*fr;
+  const participation=0.38*coh+0.35*cs+0.27*rv;
+  const peace=0.40*gov+0.35*pol+0.25*mon;
+  const overall=0.20*planet+0.18*place+0.17*people+0.17*prosperity+0.15*participation+0.13*peace;
+  return{planet:planet*100,place:place*100,people:people*100,prosperity:prosperity*100,
+         participation:participation*100,peace:peace*100,overall:overall*100};
+}
+function dstr(a,b){const d=b-a;if(Math.abs(d)<0.05)return{s:'',c:'neu'};return{s:(d>0?'+':'')+d.toFixed(1),c:d>0?'pos':'neg'};}
+const baseS=calc({});
+
+// ═══════════════════════════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════════════════════════
+const leafMap = L.map('map',{zoomControl:true,attributionControl:false}).setView([52.0732,5.0885],15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(leafMap);
+
+const pinEls={}, markers={};
+LOCS.forEach(loc=>{
+  const el=document.createElement('div');
+  el.className='custom-pin';
+  el.style.background=loc.color;
+  pinEls[loc.id]=el;
+  const icon=L.divIcon({html:el,className:'',iconSize:[13,13],iconAnchor:[6.5,6.5]});
+  const mk=L.marker([loc.lat,loc.lng],{icon}).addTo(leafMap);
+  mk.on('click',()=>selectLoc(loc.id));
+  markers[loc.id]=mk;
+});
+
+// ═══════════════════════════════════════════════════════════
+// LOCATION BUTTONS
+// ═══════════════════════════════════════════════════════════
+const btnWrap=document.getElementById('loc-buttons');
+LOCS.forEach(loc=>{
+  const btn=document.createElement('button');
+  btn.className='loc-btn';
+  btn.id='lb-'+loc.id;
+  btn.style.setProperty('--lc',loc.color);
+  btn.innerHTML=`<div class="loc-num">${loc.num}</div>
+    <div><div class="loc-name">${loc.name}</div>
+    <div class="loc-addr">${loc.tagline}</div></div>`;
+  btn.onclick=()=>selectLoc(loc.id);
+  btnWrap.appendChild(btn);
+});
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let activeLoc=null;
+let sliderVals={};   // key → current value
+let activeSlide=0;   // index into loc.slides
+
+// ═══════════════════════════════════════════════════════════
+// SELECT LOCATION
+// ═══════════════════════════════════════════════════════════
+function selectLoc(id){
+  activeLoc=LOCS.find(l=>l.id===id);
+  if(!activeLoc) return;
+
+  // Buttons
+  document.querySelectorAll('.loc-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('lb-'+id).classList.add('active');
+
+  // Map
+  leafMap.flyTo([activeLoc.lat,activeLoc.lng],16,{duration:0.7});
+  Object.entries(pinEls).forEach(([pid,el])=>{
+    el.classList.toggle('big', pid===id);
+  });
+
+  // Init slider values to baseline
+  sliderVals={};
+  activeLoc.slides.forEach(sl=>{ sliderVals[sl.key]=sl.baseVal; });
+
+  activeSlide=0;
+  renderMid();
+  renderScores();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER MIDDLE COLUMN
+// ═══════════════════════════════════════════════════════════
+function renderMid(){
+  if(!activeLoc){ document.getElementById('mid-col').innerHTML='<div class="placeholder-msg">← Select a location</div>'; return; }
+  const loc=activeLoc;
+  let html='';
+
+  // ── Problem banner ──
+  html+=`<div class="prob-banner">
+    <div class="prob-banner-hdr">
+      <div class="prob-dot" style="background:${loc.color}"></div>
+      <h2>${loc.name}</h2>
+    </div>
+    <div class="sub">${loc.tagline} &nbsp;·&nbsp; ${loc.addr}</div>
+    <div class="prob-list">`;
+  loc.problems.forEach(p=>{
+    html+=`<div class="prob-item" style="border-left-color:${p.color}">
+      <div>
+        <div class="prob-item-title">${p.title}</div>
+        <div class="prob-item-desc">${p.desc}</div>
+      </div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+
+  // ── Slide tabs ──
+  html+=`<div class="slide-tabs">
+    <span class="slide-tab-lbl">Intervention:</span>`;
+  loc.slides.forEach((sl,i)=>{
+    const on=i===activeSlide?' on':'';
+    html+=`<button class="stab${on}" style="border-color:${sl.color};color:${i===activeSlide?'#fff':sl.color};${i===activeSlide?'background:'+sl.color+';':''}" onclick="setSlide(${i})">${sl.num}. ${sl.title.split(' — ')[0]}</button>`;
+  });
+  html+=`</div>`;
+
+  // ── Active intervention slide ──
+  const sl=loc.slides[activeSlide];
+  const curVal=sliderVals[sl.key]!==undefined?sliderVals[sl.key]:sl.baseVal;
+  html+=`<div class="int-slide">
+    <div class="int-slide-hdr">
+      <div class="int-num-circle" style="background:${sl.color}">${sl.num}</div>
+      <h3>${sl.title}</h3>
+    </div>
+    <div class="int-who">${sl.who}</div>
+    <div class="int-desc">${sl.desc}</div>
+    <div class="slide-slider-wrap">
+      <div class="ssl-hdr">
+        <span class="ssl-label" style="color:${sl.color}">${sl.label}${sl.ud?'<span class="ud-tag">UD</span>':''}</span>
+        <span class="ssl-val" style="color:${sl.color}" id="ssl-val">${curVal}</span>
+      </div>
+      <div class="ssl-impact">${sl.impact}</div>
+      <input type="range" min="0" max="100" step="1" value="${curVal}"
+        style="accent-color:${sl.color}" id="slide-range"
+        oninput="onSlide(this.value,'${sl.key}')">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-top:2px;">
+        <span>Baseline: ${sl.baseVal}</span>
+        <span>Target: ${sl.intVal}</span>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('mid-col').innerHTML=html;
+}
+
+function setSlide(i){
+  activeSlide=i;
+  renderMid();
+}
+
+function onSlide(val,key){
+  sliderVals[key]=parseInt(val);
+  document.getElementById('ssl-val').textContent=val;
+  renderScores();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER SCORES (right column)
+// ═══════════════════════════════════════════════════════════
+function renderScores(){
+  if(!activeLoc){ document.getElementById('right-col').innerHTML='<div class="placeholder-msg">Scores will appear here</div>'; return; }
+
+  const overrides={...sliderVals};
+  const s=calc(overrides);
+  const ov=s.overall,ob=baseS.overall,od=ov-ob;
+  const ovc=ov>=68?'#3B6D11':ov>=52?'#BA7517':'#A32D2D';
+  const ovl=ov>=68?'WHO target':ov>=52?'Moderate':ov>=35?'Weak':'Critical';
+  const ovTxt=ov>=68?'Approaching WHO designation. All six pillars showing meaningful progress.'
+    :ov>=52?'Moderate improvement. Economic equity and governance remain gaps.'
+    :ov>=35?'Single-pillar interventions insufficient. All pillars must move.'
+    :'Current baseline. Kanaleneiland fails WHO benchmarks on four of six pillars.';
+
+  let html='';
+
+  // Overall
+  html+=`<div class="overall" style="border-color:${ovc}">
+    <div class="ov-row">
+      <div>
+        <div style="font-size:8.5px;color:var(--dim)">Overall healthy urban layer</div>
+        <div class="ov-num" style="color:${ovc}">${ov.toFixed(1)}</div>
+      </div>
+      <span class="ov-badge" style="background:${ovc}18;color:${ovc};border:0.5px solid ${ovc}">${ovl}</span>
+    </div>
+    <div class="ov-delta ${od>0.05?'pos':od<-0.05?'neg':'neu'}">${Math.abs(od)>0.05?(od>0?'▲ +':'▼ ')+od.toFixed(1)+' from baseline':''}</div>
+    <div class="ov-text">${ovTxt}</div>
+  </div>`;
+
+  // 6P pillar scores
+  html+=`<div class="pcard"><div class="pcard-title">WHO 6P pillar scores</div><div class="sc6">`;
+  WHO_T.forEach(w=>{
+    const sv=s[w.key],bv=baseS[w.key],d=dstr(bv,sv),meets=sv>=w.thr;
+    html+=`<div class="sc">
+      <div class="sc-l" style="color:${w.color}">${w.label}</div>
+      <div class="sc-v" style="color:${meets?w.color:'#A32D2D'}">${sv.toFixed(1)}</div>
+      <div class="sc-d ${d.c}">${d.s?(d.s.startsWith('+')?'▲':'▼')+' '+d.s:meets?'✓ WHO':'Below ('+w.thr+')'}</div>
+      <div class="sc-bar"><div class="sc-bf" style="width:${Math.min(100,sv)}%;background:${meets?w.color:'#A32D2D'}"></div></div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+
+  // WHO benchmark bars
+  html+=`<div class="pcard"><div class="pcard-title">WHO benchmark comparison</div>`;
+  WHO_T.forEach(w=>{
+    const sv=s[w.key],meets=sv>=w.thr,d=dstr(baseS[w.key],sv);
+    html+=`<div class="who-row">
+      <span class="wl" style="color:${w.color}">${w.label}<br><span style="font-size:7px;color:var(--dim)">thr ${w.thr}</span></span>
+      <div class="wt"><div class="wf" style="width:${Math.min(100,sv)}%;background:${meets?w.color:'#A32D2D'}"></div><div class="wth" style="left:${w.thr}%"></div></div>
+      <span class="wv" style="color:${meets?w.color:'#A32D2D'}">${sv.toFixed(0)}</span>
+      <span class="wd ${d.c}">${d.s}</span>
+    </div>`;
+  });
+  html+=`<div style="font-size:8px;color:var(--dim);margin-top:4px;display:flex;align-items:center;gap:3px;"><div style="width:1.5px;height:7px;background:#A32D2D;opacity:0.5;"></div>Red line = WHO threshold</div></div>`;
+
+  // Designation readiness
+  const passing=WHO_T.filter(w=>s[w.key]>=w.thr);
+  const failing=WHO_T.filter(w=>s[w.key]<w.thr);
+  html+=`<div class="pcard"><div class="pcard-title">Designation readiness — ${passing.length}/6 pillars</div>
+    <div class="desig">
+      ${passing.map(w=>`<span class="dtag" style="background:${w.color}18;color:${w.color};border:0.5px solid ${w.color}44">✓ ${w.label}</span>`).join('')}
+      ${failing.map(w=>`<span class="dtag" style="background:#FCEBEB;color:#A32D2D;border:0.5px solid #F09595">✗ ${w.label}</span>`).join('')}
+    </div>
+    <div style="font-size:8px;color:var(--dim);margin-top:4px;">All 6 pillars must meet threshold for WHO Healthy Cities designation</div></div>`;
+
+  document.getElementById('right-col').innerHTML=html;
+}
+
+// Auto-select location 1 on load
+selectLoc('roosevelt');
+</script>
+</body>
+</html>
